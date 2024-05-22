@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using pusher.webapi.Common;
 using pusher.webapi.Models;
 using pusher.webapi.RO;
@@ -50,5 +51,17 @@ public class StringTemplateController : ControllerBase
     {
         var result = await _stringTemplateService.DeleteStringTemplates(roomIdList);
         return ResultModel.Ok(result);
+    }
+
+    /// <summary>
+    ///     重置系统模板
+    /// </summary>
+    /// <returns></returns>
+    [Authorize(Roles = nameof(RoleType.Admin))]
+    [HttpGet]
+    public async Task<ResultModel<string>> ResetSystemStringTemplates()
+    {
+        var result = await _stringTemplateService.ResetSystemStringTemplates();
+        return result ? ResultModel.Ok("重置系统模板成功") : ResultModel.Error("重置失败", string.Empty);
     }
 }

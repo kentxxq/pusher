@@ -103,7 +103,7 @@ public class TextHandler : IMessageHandler
 
             try
             {
-                var result = await handler.HandleText(channel.ChannelUrl,textContent);
+                var result = await handler.HandleText(channel.ChannelUrl, textContent);
                 if (!result.IsSuccess)
                 {
                     h.Result = result.Message;
@@ -117,7 +117,8 @@ public class TextHandler : IMessageHandler
             catch (Exception e)
             {
                 _logger.LogWarning($"管道地址{channel.ChannelUrl}报错,{e.Message}");
-            }finally
+            }
+            finally
             {
                 h.Status = ChannelMessageStatus.Done;
                 await _repChannelMessageHistory.UpdateAsync(h);

@@ -8,5 +8,5 @@ public enum MessageEnum
     Text,
 
     [Display(Name = "图片", Description = "图片文件")]
-    Image,
+    Image
 }

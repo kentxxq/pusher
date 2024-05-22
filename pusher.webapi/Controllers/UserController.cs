@@ -51,7 +51,7 @@ public class UserController : ControllerBase
     public async Task<ResultModel<LoginSO>> RefreshToken()
     {
         var user = await _userService.GetUserByUsername(HttpContext.GetUsername());
-        var token = _jwtService.GetToken(user.Id,user.Username,[user.RoleType.ToStringFast()]);
+        var token = _jwtService.GetToken(user.Id, user.Username, [user.RoleType.ToStringFast()]);
         return ResultModel.Ok(new LoginSO { Token = token });
     }
 
@@ -112,7 +112,7 @@ public class UserController : ControllerBase
     {
         return ResultModel.Ok(await _userService.GetUsers());
     }
-    
+
     /// <summary>
     ///     用户注册/忘记密码
     /// </summary>
@@ -123,7 +123,11 @@ public class UserController : ControllerBase
     public async Task<ResultModel<string>> GetPassword(string username)
     {
         var user = await _userService.GetUserByUsername(username);
-        if (!EmailValidator.Validate(username)) return ResultModel.Error("非法邮箱地址",username);
+        if (!EmailValidator.Validate(username))
+        {
+            return ResultModel.Error("非法邮箱地址", username);
+        }
+
         string password;
         if (user is null)
         {
@@ -144,7 +148,7 @@ public class UserController : ControllerBase
                 return ResultModel.Error("10分钟内只允许发送一封邮件", username);
             }
         }
-        
+
         await _emailService.SendAsync(username, "pusher-用户注册", $"欢迎注册pusher,你的用户名是{username},你的密码是{password}");
         return ResultModel.Ok($"已发送邮件到{username}");
     }

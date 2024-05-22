@@ -1,6 +1,4 @@
-﻿using pusher.webapi.Service;
-
-namespace pusher.webapi.Common;
+﻿namespace pusher.webapi.Common;
 
 /// <summary>
 ///     JWT工具
@@ -23,7 +21,7 @@ public class JWTService
     /// </summary>
     /// <param name="username">用户名</param>
     /// <returns></returns>
-    public string GetToken(int userId,string username,List<string> roleType)
+    public string GetToken(int userId, string username, List<string> roleType)
     {
         // var secret = "";
         // var issuer = _configuration.GetValue<string>($"Authentication:Schemes:{schemaName}:ValidIssuer");
@@ -43,6 +41,7 @@ public class JWTService
             throw new Exception("jwt没有完成配置");
         }
 
-        return JWTool.CreateTokenString(userId, username, roleType, secret,DateTime.Now.AddDays(expireDay), issuer, audience);
+        return JWTool.CreateTokenString(userId, username, roleType, secret, DateTime.Now.AddDays(expireDay), issuer,
+            audience);
     }
 }

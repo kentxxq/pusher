@@ -237,18 +237,6 @@ public class UserService
                                    heihei
                                    """
                 }
-            },
-            new()
-            {
-                UserId = userId,
-                TemplateName = "示例模板-飞书",
-                TemplateCode = Guid.NewGuid().ToString("D"),
-                StringTemplateObject = new StringTemplateObject
-                {
-                    Variables = new List<TemplateParseObject>
-                        { new() { VariableName = "text", JsonPath = "$.content.text" } },
-                    TemplateText = "{{ text }}"
-                }
             }
             // new()
             // {

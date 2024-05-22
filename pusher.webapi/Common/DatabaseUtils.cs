@@ -58,7 +58,7 @@ public static class DatabaseUtils
                 db.Ado.CheckConnection();
                 Log.Information("数据库连接成功");
                 SyncTable(db);
-                CreateAdminUser(db);
+                CreateAdminUser(db).GetAwaiter().GetResult();
             }
             catch (Exception)
             {
@@ -66,7 +66,7 @@ public static class DatabaseUtils
                 // mysql是先建库,然后授权.所以不需要建库了
                 // CreateDatabase(db);
                 SyncTable(db);
-                CreateAdminUser(db);
+                CreateAdminUser(db).GetAwaiter().GetResult();
             }
         }
     }
@@ -128,6 +128,7 @@ public static class DatabaseUtils
             Log.Information("初始化ken用户成功");
             return id;
         }
+
         Log.Information("ken用户已存在,不插入新数据");
         return user.Id;
     }

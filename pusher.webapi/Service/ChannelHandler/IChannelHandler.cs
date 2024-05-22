@@ -1,5 +1,4 @@
 ﻿using pusher.webapi.Common;
-using pusher.webapi.Models;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
@@ -19,5 +18,5 @@ public interface IChannelHandler
     ///     处理实现
     /// </summary>
     /// <returns></returns>
-    Task<HandlerResult> HandleText(string url,string content);
+    Task<HandlerResult> HandleText(string url, string content);
 }
