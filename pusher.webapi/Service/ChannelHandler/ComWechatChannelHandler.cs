@@ -1,7 +1,5 @@
 ﻿using pusher.webapi.Common;
-using pusher.webapi.Models;
 using pusher.webapi.Service.ChannelHandler.ComWechat;
-using pusher.webapi.Service.Database;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
@@ -10,7 +8,6 @@ namespace pusher.webapi.Service.ChannelHandler;
 /// </summary>
 public class ComWechatChannelHandler : IChannelHandler
 {
-
     /// <inheritdoc />
     public bool CanHandle(ChannelEnum channelType)
     {
@@ -23,7 +20,8 @@ public class ComWechatChannelHandler : IChannelHandler
         var httpClient = new HttpClient();
         var httpResponseMessage = await httpClient.PostAsJsonAsync(url, data);
         var result = await httpResponseMessage.Content.ReadFromJsonAsync<ComWechatResponse>();
-        return result?.ErrorCode != 0 ? new HandlerResult{IsSuccess = false, Message = result?.ErrorMessage ?? string.Empty} : new HandlerResult{IsSuccess = true};
-
+        return result?.ErrorCode != 0
+            ? new HandlerResult { IsSuccess = false, Message = result?.ErrorMessage ?? string.Empty }
+            : new HandlerResult { IsSuccess = true };
     }
 }

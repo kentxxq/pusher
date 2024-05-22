@@ -1,7 +1,5 @@
 ﻿using pusher.webapi.Common;
-using pusher.webapi.Models;
 using pusher.webapi.Service.ChannelHandler.Lark;
-using pusher.webapi.Service.Database;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
@@ -22,6 +20,8 @@ public class LarkChannelHandler : IChannelHandler
         var httpClient = new HttpClient();
         var httpResponseMessage = await httpClient.PostAsJsonAsync(url, data);
         var result = await httpResponseMessage.Content.ReadFromJsonAsync<LarkTextResponse>();
-        return result?.Code != 0 ? new HandlerResult{IsSuccess = false, Message = result?.Msg ?? string.Empty} : new HandlerResult{IsSuccess = true};
+        return result?.Code != 0
+            ? new HandlerResult { IsSuccess = false, Message = result?.Msg ?? string.Empty }
+            : new HandlerResult { IsSuccess = true };
     }
 }

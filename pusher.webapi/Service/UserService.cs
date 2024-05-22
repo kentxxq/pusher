@@ -6,19 +6,20 @@ namespace pusher.webapi.Service;
 
 public class UserService
 {
-    private readonly ILogger<UserService> _logger;
     private readonly JWTService _jwtService;
+    private readonly ILogger<UserService> _logger;
     private readonly Repository<Channel> _repChannel;
+    private readonly Repository<ChannelMessageHistory> _repChannelMessageHistory;
+    private readonly Repository<Message> _repMessage;
     private readonly Repository<Room> _repRoom;
     private readonly Repository<RoomWithChannel> _repRoomWithChannel;
     private readonly Repository<StringTemplate> _repStringTemplate;
-    private readonly Repository<ChannelMessageHistory> _repChannelMessageHistory;
-    private readonly Repository<Message> _repMessage;
     private readonly Repository<User> _repUser;
 
     public UserService(Repository<User> repUser, ILogger<UserService> logger, Repository<Room> repRoom,
         Repository<Channel> repChannel, Repository<StringTemplate> repStringTemplate,
-        Repository<RoomWithChannel> repRoomWithChannel, JWTService jwtService, Repository<ChannelMessageHistory> repChannelMessageHistory, Repository<Message> repMessage)
+        Repository<RoomWithChannel> repRoomWithChannel, JWTService jwtService,
+        Repository<ChannelMessageHistory> repChannelMessageHistory, Repository<Message> repMessage)
     {
         _repUser = repUser;
         _logger = logger;
@@ -44,6 +45,7 @@ public class UserService
         {
             throw new PusherException("用户名或密码错误");
         }
+
         _logger.LogInformation("用户{username}登录成功", username);
 
         user.LastLoginTime = DateTime.Now;
@@ -163,11 +165,11 @@ public class UserService
         await _repRoom.DeleteByIdsAsync(rooms.Select(r => r.Id).Cast<object>().ToArray());
         await _repRoomWithChannel.DeleteAsync(r => rooms.Select(r => r.Id).Contains(r.RoomId));
         await _repMessage.DeleteAsync(m => rooms.Select(r => r.Id).Contains(m.RoomId));
-        
+
         var channels = await _repChannel.GetListAsync(c => c.UserId == userId);
         await _repChannel.DeleteByIdsAsync(channels.Select(r => r.Id).Cast<object>().ToArray());
         await _repChannelMessageHistory.DeleteAsync(h => channels.Select(c => c.Id).Contains(h.ChannelId));
-        
+
         var stringTemplates = await _repStringTemplate.GetListAsync(t => t.UserId == userId);
         await _repStringTemplate.DeleteByIdsAsync(stringTemplates.Select(t => t.Id).Cast<object>().ToArray());
     }
@@ -203,7 +205,7 @@ public class UserService
         var roomId = await _repRoom.InsertReturnIdentityAsync(initRoom);
         _logger.LogInformation("新增房间成功,id:{RoomId}", roomId);
 
-        var initChannel = new Channel()
+        var initChannel = new Channel
         {
             ChannelName = "示例-飞书", ChannelType = ChannelEnum.Lark,
             ChannelUrl = "https://open.feishu.cn/open-apis/bot/v2/hook/你的key",
