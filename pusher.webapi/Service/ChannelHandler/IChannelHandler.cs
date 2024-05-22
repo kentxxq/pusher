@@ -19,5 +19,5 @@ public interface IChannelHandler
     ///     处理实现
     /// </summary>
     /// <returns></returns>
-    Task<bool> Handle(string url, ChannelMessageHistory channelMessageHistory);
+    Task<HandlerResult> HandleText(string url,string content);
 }

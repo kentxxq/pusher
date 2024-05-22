@@ -3,6 +3,7 @@ using pusher.webapi.Common;
 using pusher.webapi.Models;
 using pusher.webapi.RO;
 using pusher.webapi.Service;
+using pusher.webapi.Service.ChannelHandler;
 
 namespace pusher.webapi.Controllers;
 
@@ -79,5 +80,23 @@ public class ChannelController : ControllerBase
 
         var data = await _channelService.UpdateChannel(channel);
         return ResultModel.Ok(data);
+    }
+
+    /// <summary>
+    /// 发送测试信息到channel
+    /// </summary>
+    /// <param name="channelId"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<ResultModel<bool>> SendTestMessageToChannel(int channelId)
+    {
+        if (!await _channelService.IsChannelBelongsToUser(channelId,HttpContext.User.GetUserId()))
+        {
+            return ResultModel.Error("没有权限发送消息", false);
+        }
+
+        var result = await _channelService.SendTestMessageToChannel(channelId);
+        return result.IsSuccess ? ResultModel.Ok(true) : ResultModel.Error($"发送失败:{result.Message}", false);
+
     }
 }

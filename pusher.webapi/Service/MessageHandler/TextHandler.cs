@@ -103,15 +103,25 @@ public class TextHandler : IMessageHandler
 
             try
             {
-                await handler.Handle(channel.ChannelUrl, h);
+                var result = await handler.HandleText(channel.ChannelUrl,textContent);
+                if (!result.IsSuccess)
+                {
+                    h.Result = result.Message;
+                    _logger.LogWarning($"管道地址{channel.ChannelUrl}发送失败,{result.Message}");
+                }
+                else
+                {
+                    _logger.LogWarning($"管道地址{channel.ChannelUrl}发送成功");
+                }
             }
             catch (Exception e)
             {
-                _logger.LogWarning($"管道地址{channel.ChannelUrl}发送失败,{e.Message}");
-                continue;
+                _logger.LogWarning($"管道地址{channel.ChannelUrl}报错,{e.Message}");
+            }finally
+            {
+                h.Status = ChannelMessageStatus.Done;
+                await _repChannelMessageHistory.UpdateAsync(h);
             }
-
-            _logger.LogInformation($"管道消息历史表{h.MessageId}处理完成");
         }
 
         return true;
