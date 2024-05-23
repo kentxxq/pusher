@@ -4,7 +4,7 @@ using Quartz;
 namespace pusher.webapi.Jobs;
 
 /// <summary>
-/// 数据库初始化
+///     数据库初始化
 /// </summary>
 public class DatabaseInit : IJob
 {

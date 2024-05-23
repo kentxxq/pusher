@@ -195,37 +195,37 @@ public class UserService
     ///     示例用户数据. 创建room,channel,stringTemplate
     /// </summary>
     /// <param name="userId"></param>
-    public async Task InitUserData(int userId)
+    public async Task<bool> InitUserData(int userId)
     {
         _logger.LogInformation("开始初始化用户id为{UserId}的数据", userId);
-        var initRoom = new Room
+        var demoRoom = new Room
         {
             RoomName = "示例-房间名",
             RoomCode = Guid.NewGuid().ToString("D"),
             CreateDate = DateTime.Now,
             UserId = userId
         };
-        var roomId = await _repRoom.InsertReturnIdentityAsync(initRoom);
+        var roomId = await _repRoom.InsertReturnIdentityAsync(demoRoom);
         _logger.LogInformation("新增房间成功,id:{RoomId}", roomId);
 
-        var initChannel = new Channel
+        var demoChannel = new Channel
         {
             ChannelName = "示例-飞书",
             ChannelType = ChannelEnum.Lark,
             ChannelUrl = "https://open.feishu.cn/open-apis/bot/v2/hook/你的key",
             UserId = userId
         };
-        var channelId = await _repChannel.InsertReturnIdentityAsync(initChannel);
+        var channelId = await _repChannel.InsertReturnIdentityAsync(demoChannel);
         _logger.LogInformation("新增渠道成功:{ChannelId}", channelId);
 
-        var initRoomWithChannel = new List<RoomWithChannel>
+        var demoRoomWithChannel = new List<RoomWithChannel>
         {
             new() { RoomId = roomId, ChannelId = channelId }
         };
-        await _repRoomWithChannel.InsertRangeAsync(initRoomWithChannel);
-        _logger.LogInformation("新增{Count}个房间与渠道关系成功", initRoomWithChannel.Count);
+        await _repRoomWithChannel.InsertRangeAsync(demoRoomWithChannel);
+        _logger.LogInformation("新增{Count}个房间与渠道关系成功", demoRoomWithChannel.Count);
 
-        var initStringTemplate = new List<StringTemplate>
+        var demoStringTemplate = new List<StringTemplate>
         {
             new()
             {
@@ -242,32 +242,9 @@ public class UserService
                                    """
                 }
             }
-            // new()
-            // {
-            //     UserId = userId,
-            //     TemplateName = "示例模板-钉钉",
-            //     TemplateCode = Guid.NewGuid().ToString("D"),
-            //     StringTemplateObject = new StringTemplateObject
-            //     {
-            //         Variables = new List<TemplateParseObject>
-            //             { new() { VariableName = "content", JsonPath = "$.text.content" } },
-            //         TemplateText = "{{ content }}"
-            //     }
-            // },
-            // new()
-            // {
-            //     UserId = userId,
-            //     TemplateName = "示例模板-企业微信",
-            //     TemplateCode = Guid.NewGuid().ToString("D"),
-            //     StringTemplateObject = new StringTemplateObject
-            //     {
-            //         Variables = new List<TemplateParseObject>
-            //             { new() { VariableName = "content", JsonPath = "$.text.content" } },
-            //         TemplateText = "{{ content }}"
-            //     }
-            // }
         };
-        await _repStringTemplate.InsertRangeAsync(initStringTemplate);
-        _logger.LogInformation("新增{Count}个模板成功", initStringTemplate.Count);
+        await _repStringTemplate.InsertRangeAsync(demoStringTemplate);
+        _logger.LogInformation("新增{Count}个模板成功", demoStringTemplate.Count);
+        return true;
     }
 }

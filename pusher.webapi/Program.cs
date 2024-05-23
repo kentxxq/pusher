@@ -62,7 +62,7 @@ try
 
     // 数据库
     builder.Services.AddSqlsugarSetup(builder.Configuration);
-    builder.Services.AddSingleton<DBService>();
+    builder.Services.AddTransient<DBService>();
     builder.Services.AddScoped(typeof(Repository<>));
 
 

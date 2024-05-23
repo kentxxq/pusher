@@ -2,7 +2,6 @@ using EmailValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pusher.webapi.Common;
-using pusher.webapi.Models;
 using pusher.webapi.RO;
 using pusher.webapi.Service;
 using pusher.webapi.SO;
@@ -74,44 +73,6 @@ public class UserController : ControllerBase
         return ResultModel.Error("信息有误,修改失败", username);
     }
 
-    /// <summary>
-    ///     创建用户
-    /// </summary>
-    /// <param name="createUserRO"></param>
-    /// <returns></returns>
-    [Authorize(Roles = nameof(RoleType.Admin))]
-    [HttpPost]
-    public async Task<ResultModel<int>> CreateUser(CreateUserRO createUserRO)
-    {
-        var userId = await _userService.CreateUser(createUserRO.Username, createUserRO.Password,
-            createUserRO.RoleType);
-        await _userService.InitUserData(userId);
-        return ResultModel.Ok(userId);
-    }
-
-    /// <summary>
-    ///     删除用户
-    /// </summary>
-    /// <param name="deleteIdList"></param>
-    /// <returns></returns>
-    [Authorize(Roles = nameof(RoleType.Admin))]
-    [HttpPost]
-    public async Task<ResultModel<int>> DeleteUser(List<int> deleteIdList)
-    {
-        var count = await _userService.DeleteUser(deleteIdList);
-        return ResultModel.Ok(count);
-    }
-
-    /// <summary>
-    ///     获取所有用户
-    /// </summary>
-    /// <returns></returns>
-    [Authorize(Roles = nameof(RoleType.Admin))]
-    [HttpGet]
-    public async Task<ResultModel<List<User>>> GetUsers()
-    {
-        return ResultModel.Ok(await _userService.GetUsers());
-    }
 
     /// <summary>
     ///     用户注册/忘记密码
@@ -151,19 +112,5 @@ public class UserController : ControllerBase
 
         await _emailService.SendAsync(username, "pusher-用户注册", $"欢迎注册pusher,你的用户名是{username},你的密码是{password}");
         return ResultModel.Ok($"已发送邮件到{username}");
-    }
-
-    [Authorize(Roles = nameof(RoleType.Admin))]
-    [HttpPost]
-    public async Task<ResultModel<string>> UpdateUserRole(UpdateUserRoleRO updateUserRoleRO)
-    {
-        var user = await _userService.GetUserByUsername(updateUserRoleRO.Username);
-        if (user is null)
-        {
-            throw new PusherException("用户不存在");
-        }
-
-        user.RoleType = updateUserRoleRO.RoleType;
-        return ResultModel.Ok(await _userService.UpdateUser(user) ? "修改成功" : "修改失败");
     }
 }

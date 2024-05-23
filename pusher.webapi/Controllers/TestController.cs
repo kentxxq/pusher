@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pusher.webapi.Common;
-using pusher.webapi.Service;
-using pusher.webapi.Service.Database;
-using SqlSugar;
 
 namespace pusher.webapi.Controllers;
 
@@ -12,18 +9,11 @@ namespace pusher.webapi.Controllers;
 [Route("[controller]/[action]")]
 public class TestController : ControllerBase
 {
-    private readonly DBService _dbService;
     private readonly ILogger<UserController> _logger;
-    private readonly ISqlSugarClient _sqlSugarClient;
-    private readonly UserService _userService;
 
-    public TestController(ILogger<UserController> logger, ISqlSugarClient sqlSugarClient, UserService userService,
-        DBService dbService)
+    public TestController(ILogger<UserController> logger)
     {
         _logger = logger;
-        _sqlSugarClient = sqlSugarClient;
-        _userService = userService;
-        _dbService = dbService;
     }
 
     [AllowAnonymous]
@@ -46,15 +36,5 @@ public class TestController : ControllerBase
     public string TestAdmin()
     {
         return "admin";
-    }
-
-    [Authorize(Roles = nameof(RoleType.Admin))]
-    [HttpGet]
-    public async Task<string> ResetDatabase()
-    {
-        _dbService.ResetDatabase();
-        var userId = await _dbService.CreateAdminUser();
-        await _userService.InitUserData(userId);
-        return "重置成功";
     }
 }

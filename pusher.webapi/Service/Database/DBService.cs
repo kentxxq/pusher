@@ -8,12 +8,17 @@ namespace pusher.webapi.Service.Database;
 public class DBService
 {
     private readonly ILogger<DBService> _logger;
+    private readonly Repository<StringTemplate> _repStringTemplate;
+    private readonly Repository<User> _repUser;
     private readonly ISqlSugarClient _sugarClient;
 
-    public DBService(ISqlSugarClient sugarClient, ILogger<DBService> logger)
+    public DBService(ISqlSugarClient sugarClient, ILogger<DBService> logger,
+        Repository<StringTemplate> repStringTemplate, Repository<User> repUser)
     {
         _sugarClient = sugarClient;
         _logger = logger;
+        _repStringTemplate = repStringTemplate;
+        _repUser = repUser;
     }
 
     /// <summary>
@@ -119,11 +124,52 @@ public class DBService
     }
 
     /// <summary>
-    ///     获取数据库的表数量
+    ///     重置系统模板
     /// </summary>
     /// <returns></returns>
-    public int GetDatabaseTableCount()
+    public async Task<bool> ResetSystemStringTemplates()
     {
-        return _sugarClient.DbMaintenance.GetTableInfoList().Count;
+        var user = await _repUser.GetFirstAsync(u => u.Username == "ken");
+        List<string> systemTemplateCode =
+            [nameof(ChannelEnum.Lark), nameof(ChannelEnum.ComWechat), nameof(ChannelEnum.DingTalk)];
+        await _repStringTemplate.DeleteAsync(t => systemTemplateCode.Contains(t.TemplateCode));
+        var initStringTemplate = new List<StringTemplate>
+        {
+            new()
+            {
+                UserId = user.Id,
+                TemplateName = "示例模板-飞书",
+                TemplateCode = nameof(ChannelEnum.Lark),
+                StringTemplateObject = new StringTemplateObject
+                {
+                    Variables = [new TemplateParseObject { VariableName = "text", JsonPath = "$.content.text" }],
+                    TemplateText = "{{ text }}"
+                }
+            },
+            new()
+            {
+                UserId = user.Id,
+                TemplateName = "示例模板-钉钉",
+                TemplateCode = nameof(ChannelEnum.DingTalk),
+                StringTemplateObject = new StringTemplateObject
+                {
+                    Variables = [new TemplateParseObject { VariableName = "content", JsonPath = "$.text.content" }],
+                    TemplateText = "{{ content }}"
+                }
+            },
+            new()
+            {
+                UserId = user.Id,
+                TemplateName = "示例模板-企业微信",
+                TemplateCode = nameof(ChannelEnum.ComWechat),
+                StringTemplateObject = new StringTemplateObject
+                {
+                    Variables = [new TemplateParseObject { VariableName = "content", JsonPath = "$.text.content" }],
+                    TemplateText = "{{ content }}"
+                }
+            }
+        };
+
+        return await _repStringTemplate.InsertRangeAsync(initStringTemplate);
     }
 }
