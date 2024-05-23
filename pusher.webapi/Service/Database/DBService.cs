@@ -131,14 +131,25 @@ public class DBService
     {
         var user = await _repUser.GetFirstAsync(u => u.Username == "ken");
         List<string> systemTemplateCode =
-            [nameof(ChannelEnum.Lark), nameof(ChannelEnum.ComWechat), nameof(ChannelEnum.DingTalk)];
+            [nameof(ChannelEnum.Lark), nameof(ChannelEnum.ComWechat), nameof(ChannelEnum.DingTalk),"Base"];
         await _repStringTemplate.DeleteAsync(t => systemTemplateCode.Contains(t.TemplateCode));
         var initStringTemplate = new List<StringTemplate>
         {
             new()
             {
                 UserId = user.Id,
-                TemplateName = "示例模板-飞书",
+                TemplateName = "基础模板",
+                TemplateCode = "Base",
+                StringTemplateObject = new StringTemplateObject
+                {
+                    Variables = [new TemplateParseObject { VariableName = "content", JsonPath = "$.content" }],
+                    TemplateText = "{{ content }}"
+                }
+            },
+            new()
+            {
+                UserId = user.Id,
+                TemplateName = "飞书",
                 TemplateCode = nameof(ChannelEnum.Lark),
                 StringTemplateObject = new StringTemplateObject
                 {
@@ -149,7 +160,7 @@ public class DBService
             new()
             {
                 UserId = user.Id,
-                TemplateName = "示例模板-钉钉",
+                TemplateName = "钉钉",
                 TemplateCode = nameof(ChannelEnum.DingTalk),
                 StringTemplateObject = new StringTemplateObject
                 {
@@ -160,7 +171,7 @@ public class DBService
             new()
             {
                 UserId = user.Id,
-                TemplateName = "示例模板-企业微信",
+                TemplateName = "企业微信",
                 TemplateCode = nameof(ChannelEnum.ComWechat),
                 StringTemplateObject = new StringTemplateObject
                 {
