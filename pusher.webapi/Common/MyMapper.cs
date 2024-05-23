@@ -1,4 +1,4 @@
-﻿using pusher.webapi.Models;
+using pusher.webapi.Models;
 using pusher.webapi.RO;
 using Riok.Mapperly.Abstractions;
 

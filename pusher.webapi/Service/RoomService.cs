@@ -1,4 +1,4 @@
-﻿using pusher.webapi.Common;
+using pusher.webapi.Common;
 using pusher.webapi.Models;
 using pusher.webapi.Service.Database;
 using pusher.webapi.Service.MessageHandler;

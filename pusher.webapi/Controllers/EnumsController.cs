@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MyReflection;
 using pusher.webapi.Common;
 using pusher.webapi.SO;

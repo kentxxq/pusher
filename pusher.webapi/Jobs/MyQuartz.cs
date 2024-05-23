@@ -1,4 +1,4 @@
-﻿using Quartz;
+using Quartz;
 using Quartz.AspNetCore;
 
 namespace pusher.webapi.Jobs;
@@ -11,10 +11,17 @@ public static class MyQuartz
         builder.Services.Configure<QuartzOptions>(builder.Configuration.GetSection("Quartz"));
         builder.Services.AddQuartz(q =>
         {
+            q.ScheduleJob<DatabaseInit>(trigger =>
+            {
+                trigger.WithIdentity(nameof(DatabaseInit), "default")
+                    .StartNow()
+                    .WithDescription("数据库初始化");
+            });
+
             q.ScheduleJob<CleanUselessInfo>(trigger =>
             {
                 trigger
-                    .WithIdentity("DeleteUselessUser", "default")
+                    .WithIdentity(nameof(CleanUselessInfo), "default")
                     .WithCronSchedule(
                         "0 0 2 * * ?") // 每天凌晨2点 https://www.quartz-scheduler.net/documentation/quartz-3.x/tutorial/crontriggers.html
                     .WithDescription("删除没有使用的用户");

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pusher.webapi.Common;
@@ -67,7 +67,9 @@ public class RoomController : ControllerBase
         var result = await _roomService.HandleMessage(roomCode, roomKey,
             new MessageInfo
             {
-                MessageType = messageType, Content = data, TemplateCode = templateCode
+                MessageType = messageType,
+                Content = data,
+                TemplateCode = templateCode
             });
         return ResultModel.Ok($"房间{roomCode}接收请求：{result}");
     }

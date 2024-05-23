@@ -1,4 +1,4 @@
-﻿using pusher.webapi.Common;
+using pusher.webapi.Common;
 using pusher.webapi.Models;
 using pusher.webapi.Service.Database;
 
@@ -200,14 +200,18 @@ public class UserService
         _logger.LogInformation("开始初始化用户id为{UserId}的数据", userId);
         var initRoom = new Room
         {
-            RoomName = "示例-房间名", RoomCode = Guid.NewGuid().ToString("D"), CreateDate = DateTime.Now, UserId = userId
+            RoomName = "示例-房间名",
+            RoomCode = Guid.NewGuid().ToString("D"),
+            CreateDate = DateTime.Now,
+            UserId = userId
         };
         var roomId = await _repRoom.InsertReturnIdentityAsync(initRoom);
         _logger.LogInformation("新增房间成功,id:{RoomId}", roomId);
 
         var initChannel = new Channel
         {
-            ChannelName = "示例-飞书", ChannelType = ChannelEnum.Lark,
+            ChannelName = "示例-飞书",
+            ChannelType = ChannelEnum.Lark,
             ChannelUrl = "https://open.feishu.cn/open-apis/bot/v2/hook/你的key",
             UserId = userId
         };

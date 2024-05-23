@@ -1,4 +1,4 @@
-﻿namespace pusher.webapi.Common;
+namespace pusher.webapi.Common;
 
 public class PusherException : Exception
 {

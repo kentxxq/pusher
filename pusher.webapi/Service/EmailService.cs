@@ -1,4 +1,4 @@
-﻿using System.Security.Authentication;
+using System.Security.Authentication;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MimeKit.Text;

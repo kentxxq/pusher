@@ -1,4 +1,4 @@
-﻿namespace pusher.webapi.Service.ChannelHandler;
+namespace pusher.webapi.Service.ChannelHandler;
 
 public class HandlerResult
 {

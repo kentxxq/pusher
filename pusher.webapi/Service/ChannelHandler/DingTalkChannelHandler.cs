@@ -1,4 +1,4 @@
-﻿using pusher.webapi.Common;
+using pusher.webapi.Common;
 using pusher.webapi.Service.ChannelHandler.DingTalk;
 
 namespace pusher.webapi.Service.ChannelHandler;

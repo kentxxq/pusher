@@ -1,4 +1,4 @@
-﻿namespace pusher.webapi.RO;
+namespace pusher.webapi.RO;
 
 public class UpdateRoomRO
 {

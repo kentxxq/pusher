@@ -59,26 +59,10 @@ try
     builder.AddMyJWT();
     builder.Services.AddTransient<EmailService>();
     builder.AddMyQuartz();
-    // builder.Services.AddTransient<DeleteUselessUser>();
 
     // 数据库
-    // 开发环境自动初始化,同步表结构
-    if (builder.Environment.IsDevelopment())
-    {
-        DatabaseUtils.InitAndSyncDatabase(builder.Configuration);
-    }
-    else
-    {
-        var db = DatabaseUtils.GetSqlSugarClientFromConfig(builder.Configuration);
-        // 数据库里没有任何表,说明没有初始化
-        if (db.DbMaintenance.GetTableInfoList().Count == 0)
-        {
-            DatabaseUtils.InitAndSyncDatabase(builder.Configuration);
-        }
-    }
-
     builder.Services.AddSqlsugarSetup(builder.Configuration);
-    // builder.Services.AddDBService();
+    builder.Services.AddSingleton<DBService>();
     builder.Services.AddScoped(typeof(Repository<>));
 
 

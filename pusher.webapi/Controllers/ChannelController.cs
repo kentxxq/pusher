@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using pusher.webapi.Common;
 using pusher.webapi.Models;
 using pusher.webapi.RO;

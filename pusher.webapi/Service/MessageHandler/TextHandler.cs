@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Nodes;
+using System.Text.Json.Nodes;
 using HandlebarsDotNet;
 using Json.Path;
 using pusher.webapi.Common;
@@ -73,7 +73,10 @@ public class TextHandler : IMessageHandler
         // 记录到消息表
         var message = new Message
         {
-            MessageType = MessageEnum.Text, Content = textContent, Comment = string.Empty, RecordTime = DateTime.Now,
+            MessageType = MessageEnum.Text,
+            Content = textContent,
+            Comment = string.Empty,
+            RecordTime = DateTime.Now,
             RoomId = room.Id
         };
         var messageId = await _repMessage.InsertReturnIdentityAsync(message);

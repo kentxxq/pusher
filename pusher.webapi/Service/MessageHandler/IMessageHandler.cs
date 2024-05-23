@@ -1,4 +1,4 @@
-﻿using pusher.webapi.Common;
+using pusher.webapi.Common;
 
 namespace pusher.webapi.Service.MessageHandler;
 

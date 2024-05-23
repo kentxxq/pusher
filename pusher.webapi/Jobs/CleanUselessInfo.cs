@@ -1,4 +1,4 @@
-﻿using pusher.webapi.Models;
+using pusher.webapi.Models;
 using pusher.webapi.Service;
 using pusher.webapi.Service.Database;
 using Quartz;

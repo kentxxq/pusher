@@ -1,4 +1,4 @@
-﻿using SqlSugar;
+using SqlSugar;
 
 namespace pusher.webapi.Models;
 

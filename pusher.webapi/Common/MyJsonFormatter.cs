@@ -1,4 +1,4 @@
-﻿using Serilog.Formatting;
+using Serilog.Formatting;
 using Serilog.Formatting.Json;
 
 namespace pusher.webapi.Common;
