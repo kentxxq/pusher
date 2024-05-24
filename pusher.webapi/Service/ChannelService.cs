@@ -52,6 +52,6 @@ public class ChannelService
             throw new Exception("没有找到合适的管道处理");
         }
 
-        return await handler.HandleText(channel.ChannelUrl, "测试验证\nby pusher",channel.ChannelProxyUrl);
+        return await handler.HandleText(channel.ChannelUrl, "测试验证\nby pusher", channel.ChannelProxyUrl);
     }
 }

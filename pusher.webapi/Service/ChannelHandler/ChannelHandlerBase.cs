@@ -3,7 +3,7 @@ using pusher.webapi.Enums;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
-public abstract class ChannelHandlerBase:IChannelHandler
+public abstract class ChannelHandlerBase : IChannelHandler
 {
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -12,9 +12,13 @@ public abstract class ChannelHandlerBase:IChannelHandler
         _httpClientFactory = httpClientFactory;
     }
 
+    public abstract bool CanHandle(ChannelEnum channelType);
+
+    public abstract Task<HandlerResult> HandleText(string url, string content, string proxy);
+
     /// <summary>
-    /// 获取httpclient
-    /// 没有使用代理,就采用IHttpClientFactory , 都则只能每次都初始化
+    ///     获取httpclient
+    ///     没有使用代理,就采用IHttpClientFactory , 都则只能每次都初始化
     /// </summary>
     /// <param name="proxy"></param>
     /// <returns></returns>
@@ -24,18 +28,12 @@ public abstract class ChannelHandlerBase:IChannelHandler
         {
             return _httpClientFactory.CreateClient(nameof(HttpClientType.Default));
         }
-        else
+
+        var handler = new HttpClientHandler
         {
-            var handler = new HttpClientHandler
-            {
-                Proxy = new WebProxy(proxy),
-                UseProxy = true
-            };
-            return new HttpClient(handler);
-        }
+            Proxy = new WebProxy(proxy),
+            UseProxy = true
+        };
+        return new HttpClient(handler);
     }
-
-    public abstract bool CanHandle(ChannelEnum channelType);
-
-    public abstract Task<HandlerResult> HandleText(string url, string content,string proxy);
 }

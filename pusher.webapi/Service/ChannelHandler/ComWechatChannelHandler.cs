@@ -8,7 +8,6 @@ namespace pusher.webapi.Service.ChannelHandler;
 /// </summary>
 public class ComWechatChannelHandler : ChannelHandlerBase
 {
-
     public ComWechatChannelHandler(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
     {
     }
@@ -19,7 +18,7 @@ public class ComWechatChannelHandler : ChannelHandlerBase
         return channelType == ChannelEnum.ComWechat;
     }
 
-    public override async Task<HandlerResult> HandleText(string url, string content,string proxy)
+    public override async Task<HandlerResult> HandleText(string url, string content, string proxy)
     {
         var data = new ComWechatText { Content = new ComWechatTextContent { Text = content } };
         var httpClient = GetHttpClient(proxy);

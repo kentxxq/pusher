@@ -13,9 +13,12 @@ public class LarkChannelHandler : ChannelHandlerBase
     }
 
     /// <inheritdoc />
-    public override bool CanHandle(ChannelEnum channelType) => channelType == ChannelEnum.Lark;
+    public override bool CanHandle(ChannelEnum channelType)
+    {
+        return channelType == ChannelEnum.Lark;
+    }
 
-    public override async Task<HandlerResult> HandleText(string url, string content,string proxy)
+    public override async Task<HandlerResult> HandleText(string url, string content, string proxy)
     {
         var data = new LarkText { Content = new LarkTextContent { Text = content } };
         var httpClient = GetHttpClient(proxy);
