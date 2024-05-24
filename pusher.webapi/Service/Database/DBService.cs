@@ -104,6 +104,7 @@ public class DBService
 #pragma warning restore CS8602 // 解引用可能出现空引用。
         _logger.LogInformation("开始同步表结构");
         _sugarClient.CodeFirst.SetStringDefaultLength(200).InitTables(types); //根据types创建表
+        _logger.LogInformation("表结构同步完成");
     }
 
     /// <summary>

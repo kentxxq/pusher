@@ -60,6 +60,9 @@ try
     builder.Services.AddTransient<EmailService>();
     builder.AddMyQuartz();
 
+    builder.Services.AddHttpClient("default")
+        .AddStandardResilienceHandler();
+
     // 数据库
     builder.Services.AddSqlsugarSetup(builder.Configuration);
     builder.Services.AddTransient<DBService>();

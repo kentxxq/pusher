@@ -8,6 +8,13 @@ namespace pusher.webapi.Service.ChannelHandler;
 /// </summary>
 public class LarkChannelHandler : IChannelHandler
 {
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public LarkChannelHandler(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory;
+    }
+
     /// <inheritdoc />
     public bool CanHandle(ChannelEnum channelType)
     {
@@ -17,7 +24,7 @@ public class LarkChannelHandler : IChannelHandler
     public async Task<HandlerResult> HandleText(string url, string content)
     {
         var data = new LarkText { Content = new LarkTextContent { Text = content } };
-        var httpClient = new HttpClient();
+        var httpClient = _httpClientFactory.CreateClient(nameof(HttpClientType.Default));
         var httpResponseMessage = await httpClient.PostAsJsonAsync(url, data);
         var result = await httpResponseMessage.Content.ReadFromJsonAsync<LarkTextResponse>();
         return result?.Code != 0

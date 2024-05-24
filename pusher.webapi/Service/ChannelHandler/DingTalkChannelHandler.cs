@@ -8,6 +8,13 @@ namespace pusher.webapi.Service.ChannelHandler;
 /// </summary>
 public class DinkTalkChannelHandler : IChannelHandler
 {
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public DinkTalkChannelHandler(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory;
+    }
+
     /// <inheritdoc />
     public bool CanHandle(ChannelEnum channelType)
     {
@@ -17,7 +24,7 @@ public class DinkTalkChannelHandler : IChannelHandler
     public async Task<HandlerResult> HandleText(string url, string content)
     {
         var data = new DingTalkText { Content = new DingTalkTextContent { Text = content } };
-        var httpClient = new HttpClient();
+        var httpClient = _httpClientFactory.CreateClient(nameof(HttpClientType.Default));
         var httpResponseMessage = await httpClient.PostAsJsonAsync(url, data);
         var result = await httpResponseMessage.Content.ReadFromJsonAsync<DingTalkResponse>();
         return result?.ErrorCode != 0
