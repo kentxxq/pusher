@@ -1,5 +1,5 @@
-using pusher.webapi.Models;
-using pusher.webapi.RO;
+using pusher.webapi.Models.DB;
+using pusher.webapi.Models.RO;
 using Riok.Mapperly.Abstractions;
 
 namespace pusher.webapi.Common;

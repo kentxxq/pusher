@@ -1,4 +1,4 @@
-using pusher.webapi.Common;
+using pusher.webapi.Enums;
 using pusher.webapi.Service.ChannelHandler.Lark;
 
 namespace pusher.webapi.Service.ChannelHandler;

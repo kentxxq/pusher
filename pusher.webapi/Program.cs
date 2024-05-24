@@ -1,8 +1,8 @@
 using System.Net.Mime;
 using System.Text.Json.Serialization;
-using AddSqlSugar;
 using Microsoft.AspNetCore.Diagnostics;
 using pusher.webapi.Common;
+using pusher.webapi.Extensions;
 using pusher.webapi.Jobs;
 using pusher.webapi.Service;
 using pusher.webapi.Service.ChannelHandler;

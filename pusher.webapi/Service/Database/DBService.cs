@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using pusher.webapi.Common;
-using pusher.webapi.Models;
+using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 using SqlSugar;
 
 namespace pusher.webapi.Service.Database;
@@ -131,7 +132,7 @@ public class DBService
     {
         var user = await _repUser.GetFirstAsync(u => u.Username == "ken");
         List<string> systemTemplateCode =
-            [nameof(ChannelEnum.Lark), nameof(ChannelEnum.ComWechat), nameof(ChannelEnum.DingTalk),"Base"];
+            [nameof(ChannelEnum.Lark), nameof(ChannelEnum.ComWechat), nameof(ChannelEnum.DingTalk), "Base"];
         await _repStringTemplate.DeleteAsync(t => systemTemplateCode.Contains(t.TemplateCode));
         var initStringTemplate = new List<StringTemplate>
         {

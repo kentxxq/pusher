@@ -1,4 +1,4 @@
-namespace pusher.webapi.SO;
+namespace pusher.webapi.Common;
 
 public class EnumObject
 {

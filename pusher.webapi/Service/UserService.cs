@@ -1,5 +1,6 @@
 using pusher.webapi.Common;
-using pusher.webapi.Models;
+using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 using pusher.webapi.Service.Database;
 
 namespace pusher.webapi.Service;

@@ -1,3 +1,5 @@
+using pusher.webapi.Enums;
+
 namespace pusher.webapi.Common;
 
 public class MessageInfo

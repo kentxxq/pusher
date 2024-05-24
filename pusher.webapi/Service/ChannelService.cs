@@ -1,4 +1,4 @@
-using pusher.webapi.Models;
+using pusher.webapi.Models.DB;
 using pusher.webapi.Service.ChannelHandler;
 using pusher.webapi.Service.Database;
 

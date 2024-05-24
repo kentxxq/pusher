@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using pusher.webapi.Common;
+using pusher.webapi.Enums;
 
 namespace pusher.webapi.Controllers;
 
