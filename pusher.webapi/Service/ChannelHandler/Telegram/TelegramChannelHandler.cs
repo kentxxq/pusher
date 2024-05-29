@@ -20,9 +20,11 @@ public class TelegramChannelHandler : ChannelHandlerBase
 
     public override async Task<HandlerResult> HandleText(string url, string content, string proxy)
     {
+        // url中会传递chatId,这里提取出来
         var uri = new Uri(url);
         var queryString = HttpUtility.ParseQueryString(uri.Query);
         var chatId = queryString["chatId"] ?? string.Empty;
+        // 因为url带了参数,所以截断一下
         var realUrl = url.Split('?')[0];
         var data = new TelegramText { ChatId = chatId, Text = content };
 
