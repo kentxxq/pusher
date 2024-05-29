@@ -1,7 +1,6 @@
 using pusher.webapi.Enums;
-using pusher.webapi.Service.ChannelHandler.ComWechat;
 
-namespace pusher.webapi.Service.ChannelHandler;
+namespace pusher.webapi.Service.ChannelHandler.ComWechat;
 
 /// <summary>
 ///     钉钉处理信息的方法

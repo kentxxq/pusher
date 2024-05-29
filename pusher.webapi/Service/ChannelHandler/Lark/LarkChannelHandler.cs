@@ -1,7 +1,6 @@
 using pusher.webapi.Enums;
-using pusher.webapi.Service.ChannelHandler.Lark;
 
-namespace pusher.webapi.Service.ChannelHandler;
+namespace pusher.webapi.Service.ChannelHandler.Lark;
 
 /// <summary>
 ///     钉钉处理信息的方法

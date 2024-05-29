@@ -6,6 +6,10 @@ using pusher.webapi.Extensions;
 using pusher.webapi.Jobs;
 using pusher.webapi.Service;
 using pusher.webapi.Service.ChannelHandler;
+using pusher.webapi.Service.ChannelHandler.ComWechat;
+using pusher.webapi.Service.ChannelHandler.DingTalk;
+using pusher.webapi.Service.ChannelHandler.Lark;
+using pusher.webapi.Service.ChannelHandler.Telegram;
 using pusher.webapi.Service.Database;
 using pusher.webapi.Service.MessageHandler;
 using Serilog;
@@ -77,6 +81,7 @@ try
     builder.Services.AddScoped<IChannelHandler, LarkChannelHandler>();
     builder.Services.AddScoped<IChannelHandler, DinkTalkChannelHandler>();
     builder.Services.AddScoped<IChannelHandler, ComWechatChannelHandler>();
+    builder.Services.AddScoped<IChannelHandler, TelegramChannelHandler>();
     builder.Services.AddScoped<IMessageHandler, TextHandler>();
 
 
