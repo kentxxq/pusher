@@ -29,9 +29,22 @@ public abstract class ChannelHandlerBase : IChannelHandler
             return _httpClientFactory.CreateClient(nameof(HttpClientType.Default));
         }
 
+        // 拿到proxy的用户名和密码
+        var uri = new Uri(proxy);
+        var username = uri.UserInfo.Split(':')[0];
+        var password = uri.UserInfo.Split(':')[1];
+        // 去掉url中的用户名密码
+        var uriBuilder = new UriBuilder(uri)
+        {
+            UserName = null,
+            Password = null
+        };
         var handler = new HttpClientHandler
         {
-            Proxy = new WebProxy(proxy),
+            Proxy = new WebProxy(uriBuilder.Uri)
+            {
+                Credentials = new NetworkCredential(username, password)
+            },
             UseProxy = true
         };
         return new HttpClient(handler);

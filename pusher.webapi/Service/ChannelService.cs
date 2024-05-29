@@ -8,11 +8,14 @@ public class ChannelService
 {
     private readonly IEnumerable<IChannelHandler> _channelHandlers;
     private readonly Repository<Channel> _repChannel;
+    private readonly Repository<RoomWithChannel> _repRoomWithChannel;
 
-    public ChannelService(Repository<Channel> repChannel, IEnumerable<IChannelHandler> channelHandlers)
+    public ChannelService(Repository<Channel> repChannel, IEnumerable<IChannelHandler> channelHandlers,
+        Repository<RoomWithChannel> repRoomWithChannel)
     {
         _repChannel = repChannel;
         _channelHandlers = channelHandlers;
+        _repRoomWithChannel = repRoomWithChannel;
     }
 
     public async Task<List<Channel>> GetUserChannels(int userId)
@@ -28,6 +31,7 @@ public class ChannelService
 
     public async Task<bool> DeleteChannel(List<int> channelIdList)
     {
+        await _repRoomWithChannel.DeleteAsync(r => channelIdList.Contains(r.ChannelId));
         return await _repChannel.DeleteByIdsAsync(channelIdList.Cast<object>().ToArray());
     }
 
@@ -52,6 +56,6 @@ public class ChannelService
             throw new Exception("没有找到合适的管道处理");
         }
 
-        return await handler.HandleText(channel.ChannelUrl, "测试验证\nby pusher", channel.ChannelProxyUrl);
+        return await handler.HandleText(channel.ChannelUrl, "测试验证\nby pusher", channel.ChannelProxyUrl ?? string.Empty);
     }
 }

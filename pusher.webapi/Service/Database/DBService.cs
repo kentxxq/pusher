@@ -99,7 +99,7 @@ public class DBService
 #pragma warning disable CS8602 // 解引用可能出现空引用。
         var types = typeof(User).Assembly
             .GetTypes()
-            .Where(it => it.FullName.StartsWith($"{ThisAssembly.Project.AssemblyName}.Models"))
+            .Where(it => it.FullName.StartsWith($"{ThisAssembly.Project.AssemblyName}.Models.DB"))
             .ToArray();
 #pragma warning restore CS8602 // 解引用可能出现空引用。
         _logger.LogInformation("开始同步表结构");
