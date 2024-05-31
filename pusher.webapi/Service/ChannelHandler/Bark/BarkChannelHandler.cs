@@ -24,9 +24,8 @@ public class BarkChannelHandler : ChannelHandlerBase
         var httpClient = GetHttpClient(proxy);
         var httpResponseMessage = await httpClient.PostAsJsonAsync(url, data);
         var result = await httpResponseMessage.Content.ReadAsStringAsync();
-        Console.WriteLine(result);
         return httpResponseMessage.IsSuccessStatusCode
-            ? new HandlerResult { IsSuccess = false, Message = result }
-            : new HandlerResult { IsSuccess = true };
+            ? new HandlerResult { IsSuccess = true }
+            : new HandlerResult { IsSuccess = false, Message = result };
     }
 }
