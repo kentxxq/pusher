@@ -79,11 +79,12 @@ try
     builder.Services.AddTransient<RoomService>();
     builder.Services.AddTransient<ChannelService>();
     builder.Services.AddTransient<StringTemplateService>();
-    builder.Services.AddScoped<IChannelHandler, LarkChannelHandler>();
-    builder.Services.AddScoped<IChannelHandler, DinkTalkChannelHandler>();
-    builder.Services.AddScoped<IChannelHandler, ComWechatChannelHandler>();
-    builder.Services.AddScoped<IChannelHandler, TelegramChannelHandler>();
-    builder.Services.AddScoped<IChannelHandler, BarkChannelHandler>();
+    builder.Services.AddScoped<IChannelHandler, LarkChannelHandlerHttp>();
+    builder.Services.AddScoped<IChannelHandler, DinkTalkChannelHandlerHttp>();
+    builder.Services.AddScoped<IChannelHandler, ComWechatChannelHandlerHttp>();
+    builder.Services.AddScoped<IChannelHandler, TelegramChannelHandlerHttp>();
+    builder.Services.AddScoped<IChannelHandler, BarkChannelHandlerHttp>();
+    builder.Services.AddScoped<IChannelHandler, EmailChannelHandler>();
     builder.Services.AddScoped<IMessageHandler, TextHandler>();
 
 

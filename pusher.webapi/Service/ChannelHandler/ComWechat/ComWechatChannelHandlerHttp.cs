@@ -5,9 +5,9 @@ namespace pusher.webapi.Service.ChannelHandler.ComWechat;
 /// <summary>
 ///     钉钉处理信息的方法
 /// </summary>
-public class ComWechatChannelHandler : ChannelHandlerBase
+public class ComWechatChannelHandlerHttp : ChannelHandlerHttpBase
 {
-    public ComWechatChannelHandler(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
+    public ComWechatChannelHandlerHttp(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
     {
     }
 

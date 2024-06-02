@@ -6,9 +6,9 @@ namespace pusher.webapi.Service.ChannelHandler.Telegram;
 /// <summary>
 ///     钉钉处理信息的方法
 /// </summary>
-public class TelegramChannelHandler : ChannelHandlerBase
+public class TelegramChannelHandlerHttp : ChannelHandlerHttpBase
 {
-    public TelegramChannelHandler(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
+    public TelegramChannelHandlerHttp(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
     {
     }
 

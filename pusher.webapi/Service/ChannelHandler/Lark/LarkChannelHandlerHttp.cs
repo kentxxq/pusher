@@ -5,9 +5,9 @@ namespace pusher.webapi.Service.ChannelHandler.Lark;
 /// <summary>
 ///     钉钉处理信息的方法
 /// </summary>
-public class LarkChannelHandler : ChannelHandlerBase
+public class LarkChannelHandlerHttp : ChannelHandlerHttpBase
 {
-    public LarkChannelHandler(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
+    public LarkChannelHandlerHttp(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
     {
     }
 

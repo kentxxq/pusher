@@ -1,4 +1,5 @@
 using System.Security.Authentication;
+using MailKit.Net.Proxy;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MimeKit.Text;
@@ -7,6 +8,7 @@ namespace pusher.webapi.Service;
 
 public class EmailService
 {
+    private readonly ILogger<EmailService> _logger;
     private readonly IConfiguration _configuration;
     private readonly string account;
     private readonly string password;
@@ -16,9 +18,10 @@ public class EmailService
     private readonly string senderName;
     private readonly string server;
 
-    public EmailService(IConfiguration configuration)
+    public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
     {
         _configuration = configuration;
+        _logger = logger;
 
         server = _configuration["Email:Server"];
         port = _configuration.GetValue<int>("Email:Port");
@@ -33,16 +36,27 @@ public class EmailService
     ///     smtp发送信息
     /// </summary>
     /// <param name="mimeMessage"></param>
-    private async Task SendMessage(MimeMessage mimeMessage)
+    /// <param name="proxyClient"></param>
+    private async Task<bool> SendMessage(MimeMessage mimeMessage,ProxyClient? proxyClient=null)
     {
         using var client = new SmtpClient();
+        if (proxyClient != null) client.ProxyClient = proxyClient;
         client.SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13;
 
-        await client.ConnectAsync(server, port, security);
-        // Note: only needed if the SMTP server requires authentication
-        await client.AuthenticateAsync(account, password);
-        await client.SendAsync(mimeMessage);
-        await client.DisconnectAsync(true);
+        try
+        {
+            await client.ConnectAsync(server, port, security);
+            // Note: only needed if the SMTP server requires authentication
+            await client.AuthenticateAsync(account, password);
+            await client.SendAsync(mimeMessage);
+            await client.DisconnectAsync(true);
+            return true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning("邮件发送失败{EMessage}", e.Message);
+            return false;
+        }
     }
 
     /// <summary>
@@ -51,9 +65,9 @@ public class EmailService
     /// <param name="to"></param>
     /// <param name="subject"></param>
     /// <param name="text"></param>
-    public async Task SendAsync(string to, string subject, string text)
+    public async Task<bool> SendAsync(string to, string subject, string text,ProxyClient? proxyClient=null)
     {
-        await SendAsync(new List<string> { to }, subject, text);
+        return await SendAsync(new List<string> { to }, subject, text,proxyClient);
     }
 
     /// <summary>
@@ -62,9 +76,9 @@ public class EmailService
     /// <param name="to"></param>
     /// <param name="subject"></param>
     /// <param name="text"></param>
-    public async Task SendAsync(IEnumerable<string> to, string subject, string text)
+    public async Task<bool> SendAsync(IEnumerable<string> to, string subject, string text,ProxyClient? proxyClient=null)
     {
-        await SendAsync(to, Enumerable.Empty<string>(), subject, text);
+        return await SendAsync(to, Enumerable.Empty<string>(), subject, text,proxyClient);
     }
 
     /// <summary>
@@ -74,10 +88,10 @@ public class EmailService
     /// <param name="cc"></param>
     /// <param name="subject"></param>
     /// <param name="text"></param>
-    public async Task SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, string text)
+    public async Task<bool> SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, string text,ProxyClient? proxyClient=null)
     {
-        await SendAsync(to, cc, subject, new TextPart(TextFormat.Text) { Text = text },
-            Enumerable.Empty<(string FileName, Stream Content)>());
+        return await SendAsync(to, cc, subject, new TextPart(TextFormat.Text) { Text = text },
+            Enumerable.Empty<(string FileName, Stream Content)>(),proxyClient);
     }
 
     /// <summary>
@@ -87,9 +101,9 @@ public class EmailService
     /// <param name="subject"></param>
     /// <param name="text"></param>
     /// <param name="filePath"></param>
-    public async Task SendAsync(string to, string subject, string text, string filePath)
+    public async Task<bool> SendAsync(string to, string subject, string text, string filePath,ProxyClient? proxyClient=null)
     {
-        await SendAsync(new List<string> { to }, subject, new TextPart(TextFormat.Text) { Text = text }, filePath);
+        return await SendAsync(new List<string> { to }, subject, new TextPart(TextFormat.Text) { Text = text }, filePath,proxyClient);
     }
 
 
@@ -100,10 +114,10 @@ public class EmailService
     /// <param name="subject"></param>
     /// <param name="body"></param>
     /// <param name="filePath"></param>
-    public async Task SendAsync(IEnumerable<string> to, string subject, TextPart body,
-        string filePath)
+    public async Task<bool> SendAsync(IEnumerable<string> to, string subject, TextPart body,
+        string filePath,ProxyClient? proxyClient=null)
     {
-        await SendAsync(to, Enumerable.Empty<string>(), subject, body, filePath);
+        return await SendAsync(to, Enumerable.Empty<string>(), subject, body, filePath,proxyClient);
     }
 
     /// <summary>
@@ -114,10 +128,10 @@ public class EmailService
     /// <param name="subject"></param>
     /// <param name="body"></param>
     /// <param name="filePath"></param>
-    public async Task SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, TextPart body,
-        string filePath)
+    public async Task<bool> SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, TextPart body,
+        string filePath,ProxyClient? proxyClient=null)
     {
-        await SendAsync(to, cc, subject, body, new List<string> { filePath });
+        return await SendAsync(to, cc, subject, body, new List<string> { filePath },proxyClient);
     }
 
     /// <summary>
@@ -128,16 +142,18 @@ public class EmailService
     /// <param name="subject"></param>
     /// <param name="body"></param>
     /// <param name="filesPath"></param>
-    public async Task SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, TextPart body,
-        IEnumerable<string> filesPath)
+    public async Task<bool> SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, TextPart body,
+        IEnumerable<string> filesPath,ProxyClient? proxyClient=null)
     {
         var tuples = filesPath.Select(filePath => (filePath: Path.GetFileName(filePath),
             fileStream: new FileStream(filePath, FileMode.Open) as Stream)).ToList();
-        await SendAsync(to, cc, subject, body, tuples);
+        var result = await SendAsync(to, cc, subject, body, tuples,proxyClient);
         foreach (var tuple in tuples)
         {
             await tuple.fileStream.DisposeAsync();
         }
+
+        return result;
     }
 
     /// <summary>
@@ -148,8 +164,8 @@ public class EmailService
     /// <param name="subject"></param>
     /// <param name="body"></param>
     /// <param name="fileStreamTuples"></param>
-    public async Task SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, TextPart body,
-        IEnumerable<(string FileName, Stream ContentStream)> fileStreamTuples)
+    public async Task<bool> SendAsync(IEnumerable<string> to, IEnumerable<string> cc, string subject, TextPart body,
+        IEnumerable<(string FileName, Stream ContentStream)> fileStreamTuples,ProxyClient? proxyClient=null)
     {
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(senderName, senderEmail));
@@ -177,6 +193,6 @@ public class EmailService
         }
 
         message.Body = multipart;
-        await SendMessage(message);
+        return await SendMessage(message,proxyClient);
     }
 }

@@ -8,5 +8,6 @@ public enum ChannelEnum
     [Display(Name = "企业微信")] ComWechat,
     [Display(Name = "飞书")] Lark,
     [Display(Name = "电报")] Telegram,
-    [Display(Name = "Bark")] Bark
+    [Display(Name = "Bark")] Bark,
+    [Display(Name = "邮箱")] Email
 }

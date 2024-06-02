@@ -6,9 +6,9 @@ namespace pusher.webapi.Service.ChannelHandler.Bark;
 /// <summary>
 ///     钉钉处理信息的方法
 /// </summary>
-public class BarkChannelHandler : ChannelHandlerBase
+public class BarkChannelHandlerHttp : ChannelHandlerHttpBase
 {
-    public BarkChannelHandler(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
+    public BarkChannelHandlerHttp(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
     {
     }
 

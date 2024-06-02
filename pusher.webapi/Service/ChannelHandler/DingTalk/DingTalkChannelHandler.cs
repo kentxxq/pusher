@@ -5,9 +5,9 @@ namespace pusher.webapi.Service.ChannelHandler.DingTalk;
 /// <summary>
 ///     钉钉处理信息的方法
 /// </summary>
-public class DinkTalkChannelHandler : ChannelHandlerBase
+public class DinkTalkChannelHandlerHttp : ChannelHandlerHttpBase
 {
-    public DinkTalkChannelHandler(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
+    public DinkTalkChannelHandlerHttp(IHttpClientFactory httpClientFactory) : base(httpClientFactory)
     {
     }
 
