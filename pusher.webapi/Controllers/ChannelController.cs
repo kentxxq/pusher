@@ -67,17 +67,19 @@ public class ChannelController : ControllerBase
     /// <summary>
     ///     更新管道
     /// </summary>
-    /// <param name="channel"></param>
+    /// <param name="updateChannelRO"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<ResultModel<bool>> UpdateChannel(Channel channel)
+    public async Task<ResultModel<bool>> UpdateChannel(UpdateChannelRO updateChannelRO)
     {
+        var channel = await _channelService.GetUserChannelByChannelId(HttpContext.User.GetUserId(), updateChannelRO.Id);
         // 只允许删除自己的房间
-        if (!await _channelService.IsChannelBelongsToUser(channel.Id, HttpContext.User.GetUserId()))
+        if (channel is null)
         {
-            throw new PusherException("没有权限修改不属于你的管道");
+            throw new PusherException("无法修改此channel");
         }
 
+        MyMapper.MergeUpdateChannelROToChannel(updateChannelRO, channel);
         var data = await _channelService.UpdateChannel(channel);
         return ResultModel.Ok(data);
     }

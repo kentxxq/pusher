@@ -24,6 +24,12 @@ public class ChannelService
         return data;
     }
 
+    public async Task<Channel> GetUserChannelByChannelId(int userId, int channelId)
+    {
+        var data = await _repChannel.GetFirstAsync(c => c.UserId == userId && c.Id == channelId);
+        return data;
+    }
+
     public async Task<int> CreateChannel(Channel channel)
     {
         return await _repChannel.InsertReturnIdentityAsync(channel);
