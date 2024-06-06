@@ -3,6 +3,7 @@ using pusher.webapi.Common;
 using pusher.webapi.Extensions;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Models.RO;
+using pusher.webapi.Models.SO;
 using pusher.webapi.Service;
 
 namespace pusher.webapi.Controllers;
@@ -99,5 +100,18 @@ public class ChannelController : ControllerBase
 
         var result = await _channelService.SendTestMessageToChannel(channelId);
         return result.IsSuccess ? ResultModel.Ok(true) : ResultModel.Error($"发送失败:{result.Message}", false);
+    }
+
+    [HttpGet]
+    public async Task<ResultModel<List<ChannelJoinedRoomsSO>>> GetChannelJoinedRooms(int channelId)
+    {
+        if (!await _channelService.IsChannelBelongsToUser(channelId, HttpContext.User.GetUserId()))
+        {
+            return ResultModel.Error("没有权限发送消息", new List<ChannelJoinedRoomsSO>());
+        }
+
+        var data = await _channelService.GetChannelJoinedRooms(channelId);
+        var result = data.Select(MyMapper.RoomToChannelJoinedRoomsSO).ToList();
+        return ResultModel.Ok(result);
     }
 }

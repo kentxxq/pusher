@@ -24,5 +24,5 @@ public class Room
     public int UserId { get; set; } = 1;
 
     [SugarColumn(ColumnDescription = "房间的创建时间")]
-    public DateTime? CreateDate { get; set; }
+    public DateTime CreateDate { get; set; }
 }

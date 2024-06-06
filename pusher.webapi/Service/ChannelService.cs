@@ -8,14 +8,16 @@ public class ChannelService
 {
     private readonly IEnumerable<IChannelHandler> _channelHandlers;
     private readonly Repository<Channel> _repChannel;
+    private readonly Repository<Room> _repRoom;
     private readonly Repository<RoomWithChannel> _repRoomWithChannel;
 
     public ChannelService(Repository<Channel> repChannel, IEnumerable<IChannelHandler> channelHandlers,
-        Repository<RoomWithChannel> repRoomWithChannel)
+        Repository<RoomWithChannel> repRoomWithChannel, Repository<Room> repRoom)
     {
         _repChannel = repChannel;
         _channelHandlers = channelHandlers;
         _repRoomWithChannel = repRoomWithChannel;
+        _repRoom = repRoom;
     }
 
     public async Task<List<Channel>> GetUserChannels(int userId)
@@ -63,5 +65,11 @@ public class ChannelService
         }
 
         return await handler.HandleText(channel.ChannelUrl, "测试验证\nby pusher", channel.ChannelProxyUrl ?? string.Empty);
+    }
+
+    public async Task<List<Room>> GetChannelJoinedRooms(int channelId)
+    {
+        var rList = await _repRoomWithChannel.GetListAsync(r => r.ChannelId == channelId) ?? [];
+        return await _repRoom.GetListAsync(room => rList.Select(r => r.RoomId).Contains(room.Id));
     }
 }
