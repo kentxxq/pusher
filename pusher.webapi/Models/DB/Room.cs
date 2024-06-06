@@ -23,6 +23,6 @@ public class Room
     [SugarColumn(ColumnDescription = "所属用户id")]
     public int UserId { get; set; } = 1;
 
-    [SugarColumn(ColumnDescription = "房间的创建时间")]
+    [SugarColumn(IsNullable = false, ColumnDescription = "房间的创建时间")]
     public DateTime CreateDate { get; set; }
 }

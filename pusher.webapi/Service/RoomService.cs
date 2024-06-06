@@ -10,18 +10,20 @@ public class RoomService
     private readonly ILogger<RoomService> _logger;
     private readonly IEnumerable<IMessageHandler> _messageHandlers;
     private readonly Repository<Channel> _repChannel;
+    private readonly Repository<Message> _repMessage;
     private readonly Repository<Room> _repRoom;
     private readonly Repository<RoomWithChannel> _repRoomWithChannel;
 
     public RoomService(
         IEnumerable<IMessageHandler> messageHandlers, ILogger<RoomService> logger, Repository<Room> repRoom,
-        Repository<RoomWithChannel> repRoomWithChannel, Repository<Channel> repChannel)
+        Repository<RoomWithChannel> repRoomWithChannel, Repository<Channel> repChannel, Repository<Message> repMessage)
     {
         _messageHandlers = messageHandlers;
         _logger = logger;
         _repRoom = repRoom;
         _repRoomWithChannel = repRoomWithChannel;
         _repChannel = repChannel;
+        _repMessage = repMessage;
     }
 
     /// <summary>
@@ -180,5 +182,17 @@ public class RoomService
 
         var result = await _repRoomWithChannel.GetListAsync(r => r.RoomId == roomId) ?? [];
         return result.Count;
+    }
+
+    public async Task<List<Message>> GetRoomMessageHistory(int roomId)
+    {
+        var roomMessage = await _repMessage.GetListAsync(m => m.RoomId == roomId) ?? [];
+        return roomMessage;
+    }
+
+    public async Task<List<Message>> GetRoomMessageHistory(List<int> roomIds)
+    {
+        var roomMessage = await _repMessage.GetListAsync(m => roomIds.Contains(m.RoomId)) ?? [];
+        return roomMessage;
     }
 }

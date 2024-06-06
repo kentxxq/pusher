@@ -15,4 +15,6 @@ public static partial class MyMapper
     public static partial Channel CreateChannelROToChannel(CreateChannelRO createChannelRO);
 
     public static partial ChannelJoinedRoomsSO RoomToChannelJoinedRoomsSO(Room room);
+
+    public static partial RoomMessageHistorySO MessageToRoomMessageHistorySO(Message message);
 }

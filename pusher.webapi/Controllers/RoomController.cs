@@ -6,6 +6,7 @@ using pusher.webapi.Enums;
 using pusher.webapi.Extensions;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Models.RO;
+using pusher.webapi.Models.SO;
 using pusher.webapi.Service;
 
 namespace pusher.webapi.Controllers;
@@ -183,5 +184,18 @@ public class RoomController : ControllerBase
             .Where(rc => userChannels.Select(c => c.Id).ToList().Contains(rc)).ToList();
         var result = await _roomService.UpdateRoomChannel(updateRoomChannelRO.RoomId, roomChannels);
         return ResultModel.Ok(result);
+    }
+
+    [HttpGet]
+    public async Task<ResultModel<List<RoomMessageHistorySO>>> GetRoomMessageHistory(int roomId)
+    {
+        // 是自己的room
+        if (!await _roomService.IsRoomBelongsToUser(roomId, HttpContext.User.GetUserId()))
+        {
+            throw new PusherException("room不属于你");
+        }
+
+        var data = await _roomService.GetRoomMessageHistory(roomId);
+        return ResultModel.Ok(data.Select(MyMapper.MessageToRoomMessageHistorySO).ToList());
     }
 }

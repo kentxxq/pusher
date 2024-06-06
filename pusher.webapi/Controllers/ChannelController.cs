@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using pusher.webapi.Common;
+using pusher.webapi.Enums;
 using pusher.webapi.Extensions;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Models.RO;
@@ -113,5 +114,29 @@ public class ChannelController : ControllerBase
         var data = await _channelService.GetChannelJoinedRooms(channelId);
         var result = data.Select(MyMapper.RoomToChannelJoinedRoomsSO).ToList();
         return ResultModel.Ok(result);
+    }
+
+    [HttpGet]
+    public async Task<ResultModel<List<ChannelMessageHistorySO>>> GetChannelMessageHistory(int channelId)
+    {
+        if (!await _channelService.IsChannelBelongsToUser(channelId, HttpContext.User.GetUserId()))
+        {
+            return ResultModel.Error("没有权限查询信息", new List<ChannelMessageHistorySO>());
+        }
+
+        var channelMessageHistories = await _channelService.GetChannelMessageHistory(channelId);
+        var messages =
+            await _channelService.GetMessageByMessageIds(channelMessageHistories.Select(h => h.MessageId).ToList());
+        var data = channelMessageHistories.Select(h => new ChannelMessageHistorySO
+        {
+            Id = h.Id,
+            MessageType = messages.FirstOrDefault(m => m.Id == h.MessageId)?.MessageType ?? MessageEnum.Text,
+            Content = messages.FirstOrDefault(m => m.Id == h.MessageId)?.Content ?? string.Empty,
+            RecordTime = messages.FirstOrDefault(m => m.Id == h.MessageId)?.RecordTime ?? DateTime.Now,
+            Status = h.Status,
+            Success = h.Success,
+            Result = h.Result
+        }).ToList();
+        return ResultModel.Ok(data);
     }
 }
