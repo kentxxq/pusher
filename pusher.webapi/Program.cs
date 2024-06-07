@@ -5,12 +5,6 @@ using pusher.webapi.Common;
 using pusher.webapi.Extensions;
 using pusher.webapi.Jobs;
 using pusher.webapi.Service;
-using pusher.webapi.Service.ChannelHandler;
-using pusher.webapi.Service.ChannelHandler.Bark;
-using pusher.webapi.Service.ChannelHandler.ComWechat;
-using pusher.webapi.Service.ChannelHandler.DingTalk;
-using pusher.webapi.Service.ChannelHandler.Lark;
-using pusher.webapi.Service.ChannelHandler.Telegram;
 using pusher.webapi.Service.Database;
 using pusher.webapi.Service.MessageHandler;
 using Serilog;
@@ -79,12 +73,14 @@ try
     builder.Services.AddTransient<RoomService>();
     builder.Services.AddTransient<ChannelService>();
     builder.Services.AddTransient<StringTemplateService>();
-    builder.Services.AddScoped<IChannelHandler, LarkChannelHandlerHttp>();
-    builder.Services.AddScoped<IChannelHandler, DinkTalkChannelHandlerHttp>();
-    builder.Services.AddScoped<IChannelHandler, ComWechatChannelHandlerHttp>();
-    builder.Services.AddScoped<IChannelHandler, TelegramChannelHandlerHttp>();
-    builder.Services.AddScoped<IChannelHandler, BarkChannelHandlerHttp>();
-    builder.Services.AddScoped<IChannelHandler, EmailChannelHandler>();
+    builder.Services.AddChannelHandlers();
+    // builder.Services.AddScoped<IChannelHandler, LarkChannelHandlerHttp>();
+    // builder.Services.AddScoped<IChannelHandler, DinkTalkChannelHandlerHttp>();
+    // builder.Services.AddScoped<IChannelHandler, ComWechatChannelHandlerHttp>();
+    // builder.Services.AddScoped<IChannelHandler, TelegramChannelHandlerHttp>();
+    // builder.Services.AddScoped<IChannelHandler, BarkChannelHandlerHttp>();
+    // builder.Services.AddScoped<IChannelHandler, EmailChannelHandler>();
+    // builder.Services.AddScoped<IChannelHandler, WebhookChannelHandler>();
     builder.Services.AddScoped<IMessageHandler, TextHandler>();
 
 
