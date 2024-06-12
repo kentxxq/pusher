@@ -69,10 +69,11 @@ try
 
 
     // 业务service
-    builder.Services.AddTransient<UserService>();
-    builder.Services.AddTransient<RoomService>();
-    builder.Services.AddTransient<ChannelService>();
-    builder.Services.AddTransient<StringTemplateService>();
+    builder.Services.AddTransient<DashboardService>();
+    builder.Services.AddScoped<UserService>();
+    builder.Services.AddScoped<RoomService>();
+    builder.Services.AddScoped<ChannelService>();
+    builder.Services.AddScoped<StringTemplateService>();
     builder.Services.AddChannelHandlers();
     // builder.Services.AddScoped<IChannelHandler, LarkChannelHandlerHttp>();
     // builder.Services.AddScoped<IChannelHandler, DinkTalkChannelHandlerHttp>();
