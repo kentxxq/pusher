@@ -26,6 +26,16 @@ public class ChannelService
     }
 
     /// <summary>
+    ///     获取所有channel
+    /// </summary>
+    /// <returns></returns>
+    public async Task<List<Channel>> GetChannels()
+    {
+        var data = await _repChannel.GetListAsync() ?? [];
+        return data;
+    }
+
+    /// <summary>
     ///     获取用户channel
     /// </summary>
     /// <param name="userId"></param>
@@ -66,6 +76,7 @@ public class ChannelService
     public async Task<bool> DeleteChannel(List<int> channelIdList)
     {
         await _repRoomWithChannel.DeleteAsync(r => channelIdList.Contains(r.ChannelId));
+        await _repChannelMessageHistory.DeleteAsync(h => channelIdList.Contains(h.ChannelId));
         return await _repChannel.DeleteByIdsAsync(channelIdList.Cast<object>().ToArray());
     }
 

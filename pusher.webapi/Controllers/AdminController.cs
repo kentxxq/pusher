@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Extensions;
 using pusher.webapi.Common;
 using pusher.webapi.Enums;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Models.RO;
+using pusher.webapi.Models.SO;
 using pusher.webapi.Service;
 using pusher.webapi.Service.Database;
 
@@ -18,13 +20,22 @@ namespace pusher.webapi.Controllers;
 [Route("[controller]/[action]")]
 public class AdminController : ControllerBase
 {
+    private readonly ChannelService _channelService;
+    private readonly DashboardService _dashboardService;
     private readonly DBService _dbService;
+    private readonly ILogger<DashboardController> _logger;
+    private readonly RoomService _roomService;
     private readonly UserService _userService;
 
-    public AdminController(DBService dbService, UserService userService)
+    public AdminController(DBService dbService, UserService userService, ILogger<DashboardController> logger,
+        DashboardService dashboardService, ChannelService channelService, RoomService roomService)
     {
         _dbService = dbService;
         _userService = userService;
+        _logger = logger;
+        _dashboardService = dashboardService;
+        _channelService = channelService;
+        _roomService = roomService;
     }
 
     /// <summary>
@@ -105,5 +116,89 @@ public class AdminController : ControllerBase
     {
         var count = await _userService.DeleteUser(deleteIdList);
         return ResultModel.Ok(count);
+    }
+
+    /// <summary>
+    ///     最近每天的请求数
+    /// </summary>
+    /// <param name="days"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<ResultModel<List<DateCountSO>>> GetRecentMessageCountGroupByDay(int days)
+    {
+        // 查出所有的消息
+        var messages = await _dashboardService.GetAllMessagesInDays(days);
+        var data = messages.GroupBy(m => m.RecordTime.Date.AddHours(-8))
+            .Select(g => new DateCountSO
+            {
+                Date = g.Key.ToLocalTime(),
+                Count = g.Count()
+            })
+            .ToList();
+
+        // 如果没有当天的数据,就设置成0
+        var dates = Enumerable.Range(0, days)
+            .Select(i => DateTime.Today.AddDays(-i).Date)
+            .ToList();
+        foreach (var date in dates)
+        {
+            if (!data.Select(r => r.Date).Contains(date))
+            {
+                data.Add(new DateCountSO { Date = date.Date, Count = 0 });
+            }
+        }
+
+        var result = data.OrderBy(r => r.Date).ToList();
+        return ResultModel.Ok(result);
+    }
+
+    /// <summary>
+    ///     最近每个用户的请求数
+    /// </summary>
+    /// <param name="days"></param>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<ResultModel<List<TypeIntValueSO>>> GetRecentMessageCountGroupByUser(int days)
+    {
+        // // 查出所有的消息
+        // var messages = await _dashboardService.GetAllMessagesInDays(days);
+        // // 按照房间id分组
+        // var data = messages.GroupBy(m => m.RoomId)
+        //     .Select(g => new
+        //     {
+        //         Name = g.Key,
+        //         value = g.Count()
+        //     })
+        //     .ToList();
+        //
+        // // 把roomId改成用户名
+        // var rooms = await _roomService.GetRooms();
+        // var result = data.Select(item => new TypeIntValueSO { Name = rooms.First(r => r.Id == item.Name).RoomName, Value = item.value })
+        //     .OrderByDescending(r=>r.Value)
+        //     .ToList();
+
+        var result = await _dashboardService.GetRecentMessageCountGroupByUser(days);
+
+        return ResultModel.Ok(result);
+    }
+
+    /// <summary>
+    ///     各管道类型数量
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<ResultModel<List<TypeIntValueSO>>> GetChannelCountGroupByChannelType()
+    {
+        var channels = await _channelService.GetChannels();
+        var result = channels.GroupBy(c => c.ChannelType)
+            .Select(g => new TypeIntValueSO
+            {
+                Name = g.Key.GetDisplayName(),
+                Value = g.Count()
+            })
+            .OrderByDescending(g => g.Value)
+            .ToList();
+
+        return ResultModel.Ok(result);
     }
 }

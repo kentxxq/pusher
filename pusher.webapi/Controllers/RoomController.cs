@@ -133,7 +133,7 @@ public class RoomController : ControllerBase
         room.RoomName = updateRoomRO.RoomName;
         room.RoomCode = updateRoomRO.RoomCode;
         room.RoomKey = updateRoomRO.RoomKey;
-        room.CustomRoomName = updateRoomRO.CustomRoomName;
+        room.CustomRoomCode = updateRoomRO.CustomRoomCode;
         if (await _roomService.UpdateRoom(room))
         {
             ResultModel.Ok("修改成功");

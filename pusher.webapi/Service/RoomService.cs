@@ -73,6 +73,16 @@ public class RoomService
     }
 
     /// <summary>
+    ///     获取所有房间
+    /// </summary>
+    /// <returns></returns>
+    public async Task<List<Room>> GetRooms()
+    {
+        var rooms = await _repRoom.GetListAsync() ?? [];
+        return rooms;
+    }
+
+    /// <summary>
     ///     获取用户所有房间
     /// </summary>
     /// <returns></returns>

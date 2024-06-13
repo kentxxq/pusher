@@ -17,8 +17,8 @@ public class Room
     [SugarColumn(IsNullable = true, ColumnDescription = "房间密钥")]
     public string? RoomKey { get; set; } = null!;
 
-    [SugarColumn(IsNullable = true, ColumnDescription = "房间别名")]
-    public string? CustomRoomName { get; set; } = null!;
+    [SugarColumn(IsNullable = true, ColumnDescription = "房间code别名")]
+    public string? CustomRoomCode { get; set; } = null!;
 
     [SugarColumn(ColumnDescription = "所属用户id")]
     public int UserId { get; set; } = 1;
