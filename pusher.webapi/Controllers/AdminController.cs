@@ -160,24 +160,10 @@ public class AdminController : ControllerBase
     [HttpGet]
     public async Task<ResultModel<List<TypeIntValueSO>>> GetRecentMessageCountGroupByUser(int days)
     {
-        // // 查出所有的消息
-        // var messages = await _dashboardService.GetAllMessagesInDays(days);
-        // // 按照房间id分组
-        // var data = messages.GroupBy(m => m.RoomId)
-        //     .Select(g => new
-        //     {
-        //         Name = g.Key,
-        //         value = g.Count()
-        //     })
-        //     .ToList();
-        //
-        // // 把roomId改成用户名
-        // var rooms = await _roomService.GetRooms();
-        // var result = data.Select(item => new TypeIntValueSO { Name = rooms.First(r => r.Id == item.Name).RoomName, Value = item.value })
-        //     .OrderByDescending(r=>r.Value)
-        //     .ToList();
-
-        var result = await _dashboardService.GetRecentMessageCountGroupByUser(days);
+        var usernames = await _dashboardService.GetRecentMessageUsername(days);
+        var result = usernames.GroupBy(u => u)
+            .Select(g => new TypeIntValueSO { Name = g.Key, Value = g.Count() })
+            .ToList();
 
         return ResultModel.Ok(result);
     }

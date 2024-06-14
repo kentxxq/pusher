@@ -1,3 +1,4 @@
+using Serilog;
 using SqlSugar;
 
 namespace pusher.webapi.Extensions;
@@ -10,14 +11,12 @@ public static class MySqlsugarSetupExtension
     /// <summary>
     ///     拓展方法
     /// </summary>
-    /// <param name="services"></param>
-    /// <param name="configuration"></param>
-    public static IServiceCollection AddSqlsugarSetup(this IServiceCollection services, IConfiguration configuration)
+    public static void AddSqlsugarSetup(this WebApplicationBuilder builder)
     {
         var sqlSugar = new SqlSugarScope(new ConnectionConfig
             {
-                DbType = (DbType)int.Parse(configuration["Database:DbType"] ?? "0"),
-                ConnectionString = configuration["Database:ConnectionString"],
+                DbType = (DbType)int.Parse(builder.Configuration["Database:DbType"] ?? "0"),
+                ConnectionString = builder.Configuration["Database:ConnectionString"],
                 IsAutoCloseConnection = true
             },
             db =>
@@ -25,10 +24,12 @@ public static class MySqlsugarSetupExtension
                 //单例参数配置，所有上下文生效
                 db.Aop.OnLogExecuting = (sql, pars) =>
                 {
-                    // Console.WriteLine(sql); //输出sql
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        Log.Information(sql); //输出sql
+                    }
                 };
             });
-        services.AddSingleton<ISqlSugarClient>(sqlSugar); //这边是SqlSugarScope用AddSingleton
-        return services;
+        builder.Services.AddSingleton<ISqlSugarClient>(sqlSugar); //这边是SqlSugarScope用AddSingleton
     }
 }

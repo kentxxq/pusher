@@ -1,5 +1,4 @@
 ﻿using pusher.webapi.Models.DB;
-using pusher.webapi.Models.SO;
 using pusher.webapi.Service.Database;
 using SqlSugar;
 
@@ -31,8 +30,10 @@ public class DashboardService
     public async Task<List<Message>> GetUserMessagesInDays(int userId, int days)
     {
         var messages = await GetUserMessages(userId);
+        // 带入linq会生成错误的时间,应该要在c#代码中先计算出来
+        var targetDate = DateTime.Now - TimeSpan.FromDays(days);
         // 特定天数内的消息
-        var data = messages.Where(m => m.RecordTime > DateTime.Now - TimeSpan.FromDays(days))
+        var data = messages.Where(m => m.RecordTime > targetDate)
             .ToList();
         return data;
     }
@@ -47,29 +48,31 @@ public class DashboardService
 
     public async Task<List<Message>> GetAllMessagesInDays(int days)
     {
+        // 带入linq会生成错误的时间,应该要在c#代码中先计算出来
+        var targetDate = DateTime.Now - TimeSpan.FromDays(days);
         // 特定天数内的消息
-        var messages = await _repMessage.GetListAsync(m => m.RecordTime > DateTime.Now - TimeSpan.FromDays(days)) ?? [];
+        var messages = await _repMessage.GetListAsync(m => m.RecordTime > targetDate) ?? [];
         return messages;
     }
 
-    public async Task<List<TypeIntValueSO>> GetRecentMessageCountGroupByUser(int days)
+    /// <summary>
+    ///     最近特定天数内,所有消息的用户名
+    /// </summary>
+    /// <param name="days"></param>
+    /// <returns></returns>
+    public async Task<List<string>> GetRecentMessageUsername(int days)
     {
-        var data1 = await _sqlSugarClient.Queryable<Message>()
+        // 带入linq会生成错误的时间,应该要在c#代码中先计算出来
+        var targetDate = DateTime.Now - TimeSpan.FromDays(days);
+        // 这里比较复杂,不适合用rep来写
+        // 查询最近所有消息,然后返回对应的用户名
+        var data = await _sqlSugarClient.Queryable<Message>()
             .LeftJoin<Room>((m, r) => m.RoomId == r.Id)
             .LeftJoin<User>((m, r, u) => r.UserId == u.Id)
-            .Where(m => m.RecordTime > DateTime.Now - TimeSpan.FromDays(days))
-            .Select((m, r, u) => new { u.Username, m.Id })
+            .Where(m => m.RecordTime > targetDate)
+            .Select((m, r, u) => u.Username)
             .ToListAsync();
 
-        var data2 = data1
-            .GroupBy(u => u.Username)
-            .Select(g => new TypeIntValueSO
-            {
-                Name = g.Key,
-                Value = g.Count()
-            })
-            .ToList();
-
-        return data2;
+        return data;
     }
 }

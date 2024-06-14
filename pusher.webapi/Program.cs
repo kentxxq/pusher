@@ -63,7 +63,7 @@ try
         .AddStandardResilienceHandler();
 
     // 数据库
-    builder.Services.AddSqlsugarSetup(builder.Configuration);
+    builder.AddSqlsugarSetup();
     builder.Services.AddTransient<DBService>();
     builder.Services.AddScoped(typeof(Repository<>));
 
