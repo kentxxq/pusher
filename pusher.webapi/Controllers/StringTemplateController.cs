@@ -31,18 +31,30 @@ public class StringTemplateController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ResultModel<int>> CreateStringTemplate(CreateStringTemplateRO createStringTemplateRo)
+    public async Task<ResultModel<int>> CreateStringTemplate(CreateStringTemplateRO createStringTemplateRO)
     {
-        var id = await _stringTemplateService.CreateStringTemplate(createStringTemplateRo.TemplateName,
-            createStringTemplateRo.StringTemplateObject);
+        if (await _stringTemplateService.GetStringTemplateByStringTemplateCode(createStringTemplateRO.TemplateCode) is not null)
+        {
+            throw new PusherException($"创建{createStringTemplateRO.TemplateName}失败,{createStringTemplateRO.TemplateCode}已经存在了");
+        }
+
+        var id = await _stringTemplateService.CreateStringTemplate(HttpContext.User.GetUserId(),createStringTemplateRO.TemplateName,createStringTemplateRO.TemplateCode,
+            createStringTemplateRO.StringTemplateObject);
         return ResultModel.Ok(id);
     }
 
     [HttpPost]
     public async Task<ResultModel<bool>> UpdateStringTemplate(UpdateStringTemplateRO updateStringTemplateRO)
     {
+        var tmpStringTemplate =
+            await _stringTemplateService.GetStringTemplateByStringTemplateCode(updateStringTemplateRO.TemplateCode);
+        if (tmpStringTemplate is not null && tmpStringTemplate.Id != updateStringTemplateRO.Id)
+        {
+            throw new PusherException($"更新{updateStringTemplateRO.TemplateName}失败,{updateStringTemplateRO.TemplateCode}已经存在了");
+        }
+
         var result = await _stringTemplateService.UpdateStringTemplate(updateStringTemplateRO.Id,
-            updateStringTemplateRO.TemplateName, updateStringTemplateRO.StringTemplateObject);
+            updateStringTemplateRO.TemplateName,updateStringTemplateRO.TemplateCode, updateStringTemplateRO.StringTemplateObject);
         return ResultModel.Ok(result);
     }
 

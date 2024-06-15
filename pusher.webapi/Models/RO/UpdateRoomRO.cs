@@ -9,6 +9,4 @@ public class UpdateRoomRO
     public string RoomCode { get; set; }
 
     public string? RoomKey { get; set; } = null!;
-
-    public string? CustomRoomCode { get; set; } = null!;
 }

@@ -91,12 +91,16 @@ public class RoomController : ControllerBase
     /// <summary>
     ///     创建一个room
     /// </summary>
-    /// <param name="roomName"></param>
     /// <returns></returns>
-    [HttpGet]
-    public async Task<ResultModel<int>> CreateRoom(string roomName)
+    [HttpPost]
+    public async Task<ResultModel<int>> CreateRoom(CreateRoomRO createRoomRO)
     {
-        var result = await _roomService.CreateRoom(HttpContext.User.GetUserId(), roomName);
+        if (await _roomService.GetRoomByRoomCode(createRoomRO.RoomCode) is not null)
+        {
+            throw new PusherException($"创建{createRoomRO.RoomName}失败,{createRoomRO.RoomCode}已经存在了");
+        }
+
+        var result = await _roomService.CreateRoom(HttpContext.User.GetUserId(), createRoomRO.RoomName,createRoomRO.RoomCode,createRoomRO.RoomKey);
         return ResultModel.Ok(result);
     }
 
@@ -130,13 +134,18 @@ public class RoomController : ControllerBase
             throw new PusherException("修改失败");
         }
 
+        var tmpSameCodeRoom = await _roomService.GetRoomByRoomCode(updateRoomRO.RoomCode);
+        if(tmpSameCodeRoom is not null && tmpSameCodeRoom.Id != room.Id)
+        {
+            throw new PusherException("此roomCode已经存在!");
+        }
+
         room.RoomName = updateRoomRO.RoomName;
         room.RoomCode = updateRoomRO.RoomCode;
         room.RoomKey = updateRoomRO.RoomKey;
-        room.CustomRoomCode = updateRoomRO.CustomRoomCode;
         if (await _roomService.UpdateRoom(room))
         {
-            ResultModel.Ok("修改成功");
+            return ResultModel.Ok("修改成功");
         }
 
         return ResultModel.Error("修改失败", "update数据失败");

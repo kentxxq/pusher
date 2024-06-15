@@ -103,6 +103,16 @@ public class RoomService
     }
 
     /// <summary>
+    ///     通过roomCode获取房间
+    /// </summary>
+    /// <returns></returns>
+    public async Task<Room?> GetRoomByRoomCode(string roomCode)
+    {
+        var room = await _repRoom.GetFirstAsync(r => r.RoomCode == roomCode);
+        return room;
+    }
+
+    /// <summary>
     ///     判断房间是否属于特定user
     /// </summary>
     /// <param name="roomId"></param>
@@ -119,13 +129,14 @@ public class RoomService
     /// </summary>
     /// <param name="roomName"></param>
     /// <returns></returns>
-    public async Task<int> CreateRoom(int userId, string roomName)
+    public async Task<int> CreateRoom(int userId, string roomName,string roomCode,string roomKey)
     {
         var room = new Room
         {
             RoomName = roomName,
-            RoomCode = Guid.NewGuid().ToString("D"),
+            RoomCode = roomCode,
             UserId = userId,
+            RoomKey = roomKey,
             CreateDate = DateTime.Now
         };
         var id = await _repRoom.InsertReturnIdentityAsync(room);
