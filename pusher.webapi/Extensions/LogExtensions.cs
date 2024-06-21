@@ -48,7 +48,7 @@ public static class LogExtensions
                 path: configuration["KLog:File:Path"] ?? $"{ThisAssembly.Project.AssemblyName}-.log",
                 formatter: MyJsonFormatter.Formatter,
                 rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 1)
+                retainedFileCountLimit: configuration.GetValue("KLog:File:RetainedFileCountLimit", 1))
             )
             .WriteTo.Async(l =>
                 l.Console(
