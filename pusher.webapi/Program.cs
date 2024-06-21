@@ -8,40 +8,21 @@ using pusher.webapi.Service;
 using pusher.webapi.Service.Database;
 using pusher.webapi.Service.MessageHandler;
 using Serilog;
-using Serilog.Events;
-using Serilog.Sinks.SystemConsole.Themes;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Is(LogEventLevel.Information)
-    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-    .MinimumLevel.Override("System", LogEventLevel.Warning)
-    .Enrich.WithProperty("AppName", ThisAssembly.Project.AssemblyName)
-    .Enrich.When(logEvent => !logEvent.Properties.ContainsKey("SourceContext"),
-        enrichmentConfig => enrichmentConfig.WithProperty("SourceContext", "SourceContext"))
-    .Enrich.When(logEvent => !logEvent.Properties.ContainsKey("ThreadName"),
-        enrichmentConfig => enrichmentConfig.WithProperty("ThreadName", "ThreadName"))
-    .Enrich.FromLogContext()
-    .Enrich.WithThreadId()
-    .Enrich.WithThreadName()
-    .WriteTo.Async(l => l.File(
-        path: builder.Configuration["KLog:File:Path"] ?? $"{ThisAssembly.Project.AssemblyName}-.log",
-        formatter: MyJsonFormatter.Formatter,
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: builder.Configuration.GetValue("KLog:File:RetainedFileCountLimit", 1)))
-    .WriteTo.Async(l =>
-        l.Console(
-            outputTemplate: builder.Configuration["KLog:Console:OutputTemplate"] ??
-                            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}|{Level:u3}|{SourceContext}|{ThreadName}|{ThreadId}|{Message:lj}{Exception}{NewLine}",
-            theme: AnsiConsoleTheme.Code))
+    .AddDefaultLogConfig()
     .CreateBootstrapLogger();
 
-Log.Information("启动中...");
+Log.Information("日志初始化完成,正在启动服务...");
 
 try
 {
-    builder.Services.AddSerilog();
+    builder.Services.AddSerilog((serviceProvider, loggerConfiguration) =>
+    {
+        loggerConfiguration.AddCustomLogConfig(builder.Configuration);
+    });
 
     builder.Services.AddControllers(options => { options.Filters.Add<PusherExceptionFilter>(); })
         .AddJsonOptions(options =>
