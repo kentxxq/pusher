@@ -11,8 +11,8 @@ public static class LogExtensions
     {
         return loggerConfiguration
             .MinimumLevel.Is(LogEventLevel.Information)
-            // .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-            // .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
             .Enrich.WithProperty("AppName", ThisAssembly.Project.AssemblyName)
             .Enrich.When(logEvent => !logEvent.Properties.ContainsKey("SourceContext"),
                 enrichmentConfig => enrichmentConfig.WithProperty("SourceContext", "SourceContext"))
