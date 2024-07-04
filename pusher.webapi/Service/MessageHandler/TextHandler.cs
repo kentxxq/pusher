@@ -77,7 +77,6 @@ public class TextHandler : IMessageHandler
             MessageType = MessageEnum.Text,
             Content = textContent,
             Comment = string.Empty,
-            RecordTime = DateTime.Now,
             RoomId = room.Id
         };
         var messageId = await _repMessage.InsertReturnIdentityAsync(message);

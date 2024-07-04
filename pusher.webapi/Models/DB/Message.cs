@@ -18,7 +18,7 @@ public class Message
     [SugarColumn(ColumnDescription = "消息注释")]
     public string Comment { get; set; } = null!;
 
-    [SugarColumn(IsNullable = false, ColumnDescription = "收到消息的时间")]
+    [SugarColumn(IsNullable = false, InsertServerTime = true, ColumnDescription = "收到消息的时间")]
     public DateTime RecordTime { get; set; }
 
     [SugarColumn(ColumnDescription = "房间id")]
