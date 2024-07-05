@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using pusher.webapi.Common;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Service;
@@ -11,7 +12,7 @@ namespace pusher.webapi.Jobs;
 /// </summary>
 public class CleanUselessInfo : IJob
 {
-    private readonly IConfiguration _configuration;
+    private readonly IOptionsMonitor<DataOptions> _dataOptions;
     private readonly ILogger<CleanUselessInfo> _logger;
     private readonly Repository<ChannelMessageHistory> _repChannelMessageHistory;
     private readonly Repository<Message> _repMessage;
@@ -23,15 +24,19 @@ public class CleanUselessInfo : IJob
     /// </summary>
     /// <param name="logger"></param>
     public CleanUselessInfo(ILogger<CleanUselessInfo> logger, UserService userService, Repository<User> repUser,
-        IConfiguration configuration, Repository<Message> repMessage,
-        Repository<ChannelMessageHistory> repChannelMessageHistory)
+        Repository<Message> repMessage,
+        Repository<ChannelMessageHistory> repChannelMessageHistory, IOptionsMonitor<DataOptions> dataOptions)
     {
         _logger = logger;
         _userService = userService;
         _repUser = repUser;
-        _configuration = configuration;
         _repMessage = repMessage;
         _repChannelMessageHistory = repChannelMessageHistory;
+        _dataOptions = dataOptions;
+        // _dataOptions.OnChange(config =>
+        // {
+        //     _logger.LogInformation($"检测到改动:{config}");
+        // });
     }
 
     /// <summary>
@@ -76,13 +81,12 @@ public class CleanUselessInfo : IJob
     /// </summary>
     private async Task DeleteExpiredMessage()
     {
-        var messageRetentionPeriod =
-            _configuration.GetSection(DataOptions.Data).Get<DataOptions>()!.MessageRetentionPeriod;
         var expiredMessageId =
-            await _repMessage.GetListAsync(m => (DateTime.Now - m.RecordTime).Days > messageRetentionPeriod);
+            await _repMessage.GetListAsync(m =>
+                (DateTime.Now - m.RecordTime).Days > _dataOptions.CurrentValue.MessageRetentionPeriod);
 
         await _repMessage.DeleteAsync(m => expiredMessageId.Select(e => e.Id).Contains(m.Id));
         await _repChannelMessageHistory.DeleteAsync(c => expiredMessageId.Select(e => e.Id).Contains(c.MessageId));
-        _logger.LogWarning($"已清理超过{messageRetentionPeriod}天的消息记录");
+        _logger.LogWarning($"已清理超过{_dataOptions.CurrentValue.MessageRetentionPeriod}天的消息记录");
     }
 }

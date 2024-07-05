@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using pusher.webapi.Common;
 using pusher.webapi.Enums;
 
 namespace pusher.webapi.Controllers;
@@ -9,11 +11,13 @@ namespace pusher.webapi.Controllers;
 [Route("[controller]/[action]")]
 public class TestController : ControllerBase
 {
+    private readonly IOptionsMonitor<DataOptions> _dataOptions;
     private readonly ILogger<UserController> _logger;
 
-    public TestController(ILogger<UserController> logger)
+    public TestController(ILogger<UserController> logger, IOptionsMonitor<DataOptions> dataOptions)
     {
         _logger = logger;
+        _dataOptions = dataOptions;
     }
 
     [AllowAnonymous]
@@ -21,6 +25,9 @@ public class TestController : ControllerBase
     public string TestAnyone()
     {
         _logger.LogInformation("anyone");
+        _logger.LogInformation("1");
+        _logger.LogInformation($"{_dataOptions.CurrentValue.MessageRetentionPeriod}");
+        _logger.LogInformation("2");
         return "anyone";
     }
 

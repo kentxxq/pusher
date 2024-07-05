@@ -19,6 +19,10 @@ Log.Information("日志初始化完成,正在启动服务...");
 
 try
 {
+    // 配置信息
+    builder.Services.Configure<DataOptions>(builder.Configuration.GetSection(DataOptions.Data));
+
+    // 注册服务
     builder.Host.UseSerilog((serviceProvider, loggerConfiguration) =>
     {
         loggerConfiguration.AddCustomLogConfig(builder.Configuration);
