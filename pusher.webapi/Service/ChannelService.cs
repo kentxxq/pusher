@@ -1,6 +1,8 @@
+using pusher.webapi.Common;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Service.ChannelHandler;
 using pusher.webapi.Service.Database;
+using SqlSugar;
 
 namespace pusher.webapi.Service;
 
@@ -37,6 +39,18 @@ public class ChannelService
 
     /// <summary>
     ///     获取用户channel
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    public async Task<PageDataModel<Channel>> GetUserChannelsWithPage(int userId, int pageIndex, int pageSize)
+    {
+        var p = StaticTools.CreatePageModel(pageIndex, pageSize);
+        var data = await _repChannel.GetPageListAsync(c => c.UserId == userId, p, c => c.Id, OrderByType.Asc) ?? [];
+        return PageDataModel.Ok(data, p);
+    }
+
+    /// <summary>
+    ///     获取用户所有channel
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>

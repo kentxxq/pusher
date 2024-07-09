@@ -28,7 +28,7 @@ public class EmailChannelHandler : IChannelHandler
         bool result;
         if (!string.IsNullOrEmpty(proxy))
         {
-            var webProxy = StaticNetTool.GetWebproxyFromString(proxy);
+            var webProxy = StaticTools.GetWebproxyFromString(proxy);
             ProxyClient proxyClient;
             if (proxy.StartsWith("https"))
             {

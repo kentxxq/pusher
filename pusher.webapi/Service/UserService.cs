@@ -2,6 +2,7 @@ using pusher.webapi.Common;
 using pusher.webapi.Enums;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Service.Database;
+using SqlSugar;
 
 namespace pusher.webapi.Service;
 
@@ -173,6 +174,13 @@ public class UserService
 
         var stringTemplates = await _repStringTemplate.GetListAsync(t => t.UserId == userId);
         await _repStringTemplate.DeleteByIdsAsync(stringTemplates.Select(t => t.Id).Cast<object>().ToArray());
+    }
+
+    public async Task<PageDataModel<User>> GetUsersWithPage(int pageIndex, int pageSize)
+    {
+        var p = StaticTools.CreatePageModel(pageIndex, pageSize);
+        var data = await _repUser.GetPageListAsync(r => true, p, r => r.Id, OrderByType.Asc) ?? [];
+        return PageDataModel.Ok(data, p);
     }
 
     public async Task<List<User>> GetUsers()

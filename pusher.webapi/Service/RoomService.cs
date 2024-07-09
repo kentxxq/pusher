@@ -2,6 +2,7 @@ using pusher.webapi.Common;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Service.Database;
 using pusher.webapi.Service.MessageHandler;
+using SqlSugar;
 
 namespace pusher.webapi.Service;
 
@@ -99,8 +100,8 @@ public class RoomService
     public async Task<PageDataModel<Room>> GetRoomsByUserIDWithPage(int userId, int pageIndex, int pageSize)
     {
         var p = StaticTools.CreatePageModel(pageIndex, pageSize);
-        var rooms = await _repRoom.GetPageListAsync(r => r.UserId == userId, p) ?? [];
-        return PageDataModel.Ok(p, rooms);
+        var rooms = await _repRoom.GetPageListAsync(r => r.UserId == userId, p, r => r.Id, OrderByType.Asc) ?? [];
+        return PageDataModel.Ok(rooms, p);
     }
 
     /// <summary>

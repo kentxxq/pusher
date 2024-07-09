@@ -31,9 +31,10 @@ public class ChannelController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<ResultModel<List<Channel>>> GetUserChannels()
+    public async Task<ResultModel<PageDataModel<Channel>>> GetUserChannelsWithPage([FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var data = await _channelService.GetUserChannels(HttpContext.User.GetUserId());
+        var data = await _channelService.GetUserChannelsWithPage(HttpContext.User.GetUserId(), pageIndex, pageSize);
         return ResultModel.Ok(data);
     }
 

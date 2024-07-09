@@ -68,9 +68,10 @@ public class AdminController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<ResultModel<List<User>>> GetUsers()
+    public async Task<ResultModel<PageDataModel<User>>> GetUsersWithPage([FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
     {
-        return ResultModel.Ok(await _userService.GetUsers());
+        return ResultModel.Ok(await _userService.GetUsersWithPage(pageIndex, pageSize));
     }
 
     /// <summary>

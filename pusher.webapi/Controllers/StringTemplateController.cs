@@ -24,21 +24,27 @@ public class StringTemplateController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ResultModel<List<StringTemplate>>> GetUserStringTemplates()
+    public async Task<ResultModel<PageDataModel<StringTemplate>>> GetUserStringTemplatesWithPage(
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var data = await _stringTemplateService.GetUserStringTemplates(HttpContext.User.GetUserId());
+        var data = await _stringTemplateService.GetUserStringTemplatesWithPage(HttpContext.User.GetUserId(), pageIndex,
+            pageSize);
         return ResultModel.Ok(data);
     }
 
     [HttpPost]
     public async Task<ResultModel<int>> CreateStringTemplate(CreateStringTemplateRO createStringTemplateRO)
     {
-        if (await _stringTemplateService.GetStringTemplateByStringTemplateCode(createStringTemplateRO.TemplateCode) is not null)
+        if (await _stringTemplateService.GetStringTemplateByStringTemplateCode(createStringTemplateRO.TemplateCode) is
+            not null)
         {
-            throw new PusherException($"创建{createStringTemplateRO.TemplateName}失败,{createStringTemplateRO.TemplateCode}已经存在了");
+            throw new PusherException(
+                $"创建{createStringTemplateRO.TemplateName}失败,{createStringTemplateRO.TemplateCode}已经存在了");
         }
 
-        var id = await _stringTemplateService.CreateStringTemplate(HttpContext.User.GetUserId(),createStringTemplateRO.TemplateName,createStringTemplateRO.TemplateCode,
+        var id = await _stringTemplateService.CreateStringTemplate(HttpContext.User.GetUserId(),
+            createStringTemplateRO.TemplateName, createStringTemplateRO.TemplateCode,
             createStringTemplateRO.StringTemplateObject);
         return ResultModel.Ok(id);
     }
@@ -50,11 +56,13 @@ public class StringTemplateController : ControllerBase
             await _stringTemplateService.GetStringTemplateByStringTemplateCode(updateStringTemplateRO.TemplateCode);
         if (tmpStringTemplate is not null && tmpStringTemplate.Id != updateStringTemplateRO.Id)
         {
-            throw new PusherException($"更新{updateStringTemplateRO.TemplateName}失败,{updateStringTemplateRO.TemplateCode}已经存在了");
+            throw new PusherException(
+                $"更新{updateStringTemplateRO.TemplateName}失败,{updateStringTemplateRO.TemplateCode}已经存在了");
         }
 
         var result = await _stringTemplateService.UpdateStringTemplate(updateStringTemplateRO.Id,
-            updateStringTemplateRO.TemplateName,updateStringTemplateRO.TemplateCode, updateStringTemplateRO.StringTemplateObject);
+            updateStringTemplateRO.TemplateName, updateStringTemplateRO.TemplateCode,
+            updateStringTemplateRO.StringTemplateObject);
         return ResultModel.Ok(result);
     }
 

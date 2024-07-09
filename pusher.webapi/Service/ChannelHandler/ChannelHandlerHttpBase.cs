@@ -1,5 +1,4 @@
-﻿using System.Net;
-using pusher.webapi.Common;
+﻿using pusher.webapi.Common;
 using pusher.webapi.Enums;
 
 namespace pusher.webapi.Service.ChannelHandler;
@@ -32,7 +31,7 @@ public abstract class ChannelHandlerHttpBase : IChannelHandler
 
         var handler = new HttpClientHandler
         {
-            Proxy = StaticNetTool.GetWebproxyFromString(proxy),
+            Proxy = StaticTools.GetWebproxyFromString(proxy),
             UseProxy = true
         };
         return new HttpClient(handler);

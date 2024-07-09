@@ -18,7 +18,7 @@ public static class ResultModel
 
 public static class PageDataModel
 {
-    public static PageDataModel<T> Ok<T>(PageModel p, List<T> pageData)
+    public static PageDataModel<T> Ok<T>(List<T> pageData, PageModel p)
     {
         return new PageDataModel<T>
             { PageIndex = p.PageIndex, PageSize = p.PageSize, TotalCount = p.TotalCount, PageData = pageData };

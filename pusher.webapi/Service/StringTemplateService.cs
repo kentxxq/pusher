@@ -1,6 +1,7 @@
 using pusher.webapi.Common;
 using pusher.webapi.Models.DB;
 using pusher.webapi.Service.Database;
+using SqlSugar;
 
 namespace pusher.webapi.Service;
 
@@ -16,6 +17,15 @@ public class StringTemplateService
         _repStringTemplate = repStringTemplate;
         _logger = logger;
         _repUser = repUser;
+    }
+
+    public async Task<PageDataModel<StringTemplate>> GetUserStringTemplatesWithPage(int userId, int pageIndex,
+        int pageSize)
+    {
+        var p = StaticTools.CreatePageModel(pageIndex, pageSize);
+        var data = await _repStringTemplate.GetPageListAsync(t => t.UserId == userId, p, t => t.Id, OrderByType.Asc) ??
+                   [];
+        return PageDataModel.Ok(data, p);
     }
 
     public async Task<List<StringTemplate>> GetUserStringTemplates(int userId)
@@ -34,7 +44,8 @@ public class StringTemplateService
         return stringTemplate;
     }
 
-    public async Task<int> CreateStringTemplate(int userId,string templateName, string templateCode,StringTemplateObject stringTemplateObject)
+    public async Task<int> CreateStringTemplate(int userId, string templateName, string templateCode,
+        StringTemplateObject stringTemplateObject)
     {
         var result = await _repStringTemplate.InsertReturnIdentityAsync(
             new StringTemplate
@@ -47,7 +58,8 @@ public class StringTemplateService
         return result;
     }
 
-    public async Task<bool> UpdateStringTemplate(int id, string templateName,string templateCode, StringTemplateObject stringTemplateObject)
+    public async Task<bool> UpdateStringTemplate(int id, string templateName, string templateCode,
+        StringTemplateObject stringTemplateObject)
     {
         var t = await _repStringTemplate.GetFirstAsync(t => t.Id == id);
         if (t is null)
@@ -75,6 +87,6 @@ public class StringTemplateService
     public async Task<bool> IsStringTemplateBelongsToUser(int roomId, int userId)
     {
         var stringTemplates = await GetUserStringTemplates(userId);
-        return stringTemplates.Select(t=>t.Id).Contains(roomId);
+        return stringTemplates.Select(t => t.Id).Contains(roomId);
     }
 }
