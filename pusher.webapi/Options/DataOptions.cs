@@ -1,4 +1,4 @@
-﻿namespace pusher.webapi.Common;
+﻿namespace pusher.webapi.Options;
 
 public class DataOptions
 {

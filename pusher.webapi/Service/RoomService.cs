@@ -93,6 +93,17 @@ public class RoomService
     }
 
     /// <summary>
+    ///     获取用户所有房间
+    /// </summary>
+    /// <returns></returns>
+    public async Task<PageDataModel<Room>> GetRoomsByUserIDWithPage(int userId, int pageIndex, int pageSize)
+    {
+        var p = StaticTools.CreatePageModel(pageIndex, pageSize);
+        var rooms = await _repRoom.GetPageListAsync(r => r.UserId == userId, p) ?? [];
+        return PageDataModel.Ok(p, rooms);
+    }
+
+    /// <summary>
     ///     通过roomId获取房间
     /// </summary>
     /// <returns></returns>
@@ -129,7 +140,7 @@ public class RoomService
     /// </summary>
     /// <param name="roomName"></param>
     /// <returns></returns>
-    public async Task<int> CreateRoom(int userId, string roomName,string roomCode,string roomKey)
+    public async Task<int> CreateRoom(int userId, string roomName, string roomCode, string roomKey)
     {
         var room = new Room
         {

@@ -1,4 +1,5 @@
 using pusher.webapi.Enums;
+using SqlSugar;
 
 namespace pusher.webapi.Common;
 
@@ -13,6 +14,23 @@ public static class ResultModel
     {
         return new ResultModel<T> { Code = code, Message = message, Data = errorData };
     }
+}
+
+public static class PageDataModel
+{
+    public static PageDataModel<T> Ok<T>(PageModel p, List<T> pageData)
+    {
+        return new PageDataModel<T>
+            { PageIndex = p.PageIndex, PageSize = p.PageSize, TotalCount = p.TotalCount, PageData = pageData };
+    }
+}
+
+public class PageDataModel<T>
+{
+    public int PageIndex { get; set; }
+    public int PageSize { get; set; }
+    public int TotalCount { get; set; }
+    public List<T> PageData { get; set; }
 }
 
 /// <summary>

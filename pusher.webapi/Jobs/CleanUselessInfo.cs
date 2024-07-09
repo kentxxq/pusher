@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
-using pusher.webapi.Common;
 using pusher.webapi.Models.DB;
+using pusher.webapi.Options;
 using pusher.webapi.Service;
 using pusher.webapi.Service.Database;
 using Quartz;

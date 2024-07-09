@@ -82,9 +82,10 @@ public class RoomController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<ResultModel<List<Room>>> GetRooms()
+    public async Task<ResultModel<PageDataModel<Room>>> GetRoomsWithPage([FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var result = await _roomService.GetRoomsByUserID(HttpContext.User.GetUserId());
+        var result = await _roomService.GetRoomsByUserIDWithPage(HttpContext.User.GetUserId(), pageIndex, pageSize);
         return ResultModel.Ok(result);
     }
 
@@ -100,7 +101,8 @@ public class RoomController : ControllerBase
             throw new PusherException($"创建{createRoomRO.RoomName}失败,{createRoomRO.RoomCode}已经存在了");
         }
 
-        var result = await _roomService.CreateRoom(HttpContext.User.GetUserId(), createRoomRO.RoomName,createRoomRO.RoomCode,createRoomRO.RoomKey);
+        var result = await _roomService.CreateRoom(HttpContext.User.GetUserId(), createRoomRO.RoomName,
+            createRoomRO.RoomCode, createRoomRO.RoomKey);
         return ResultModel.Ok(result);
     }
 
@@ -135,7 +137,7 @@ public class RoomController : ControllerBase
         }
 
         var tmpSameCodeRoom = await _roomService.GetRoomByRoomCode(updateRoomRO.RoomCode);
-        if(tmpSameCodeRoom is not null && tmpSameCodeRoom.Id != room.Id)
+        if (tmpSameCodeRoom is not null && tmpSameCodeRoom.Id != room.Id)
         {
             throw new PusherException("此roomCode已经存在!");
         }

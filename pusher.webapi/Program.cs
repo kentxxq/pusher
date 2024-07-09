@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using pusher.webapi.Common;
 using pusher.webapi.Extensions;
 using pusher.webapi.Jobs;
+using pusher.webapi.Options;
 using pusher.webapi.Service;
 using pusher.webapi.Service.Database;
 using pusher.webapi.Service.MessageHandler;
