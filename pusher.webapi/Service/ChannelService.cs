@@ -152,6 +152,16 @@ public class ChannelService
         return channelMessageHistories;
     }
 
+    public async Task<PageDataModel<ChannelMessageHistory>> GetChannelMessageHistoryWithPage(int channelId,
+        int pageIndex, int pageSize)
+    {
+        var p = StaticTools.CreatePageModel(pageIndex, pageSize);
+        var channelMessageHistories =
+            await _repChannelMessageHistory.GetPageListAsync(h => h.ChannelId == channelId, p, h => h.Id,
+                OrderByType.Desc) ?? [];
+        return PageDataModel.Ok(channelMessageHistories, p);
+    }
+
     public async Task<List<Message>> GetMessageByMessageIds(List<int> messageIds)
     {
         var message = await _repMessage.GetListAsync(m => messageIds.Contains(m.Id)) ?? [];

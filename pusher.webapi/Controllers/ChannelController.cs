@@ -39,6 +39,17 @@ public class ChannelController : ControllerBase
     }
 
     /// <summary>
+    ///     获取用户管道
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<ResultModel<List<Channel>>> GetUserChannels()
+    {
+        var data = await _channelService.GetUserChannels(HttpContext.User.GetUserId());
+        return ResultModel.Ok(data);
+    }
+
+    /// <summary>
     ///     创建管道
     /// </summary>
     /// <param name="createChannelRO"></param>
@@ -118,26 +129,37 @@ public class ChannelController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ResultModel<List<ChannelMessageHistorySO>>> GetChannelMessageHistory(int channelId)
+    public async Task<ResultModel<PageDataModel<ChannelMessageHistorySO>>> GetChannelMessageHistory(int channelId,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
     {
         if (!await _channelService.IsChannelBelongsToUser(channelId, HttpContext.User.GetUserId()))
         {
-            return ResultModel.Error("没有权限查询信息", new List<ChannelMessageHistorySO>());
+            return ResultModel.Error("没有权限查询信息", new PageDataModel<ChannelMessageHistorySO>());
         }
 
-        var channelMessageHistories = await _channelService.GetChannelMessageHistory(channelId);
+        var channelMessageHistories =
+            await _channelService.GetChannelMessageHistoryWithPage(channelId, pageIndex, pageSize);
         var messages =
-            await _channelService.GetMessageByMessageIds(channelMessageHistories.Select(h => h.MessageId).ToList());
-        var data = channelMessageHistories.Select(h => new ChannelMessageHistorySO
+            await _channelService.GetMessageByMessageIds(channelMessageHistories.PageData.Select(h => h.MessageId)
+                .ToList());
+
+        var result = new PageDataModel<ChannelMessageHistorySO>
         {
-            Id = h.Id,
-            MessageType = messages.FirstOrDefault(m => m.Id == h.MessageId)?.MessageType ?? MessageEnum.Text,
-            Content = messages.FirstOrDefault(m => m.Id == h.MessageId)?.Content ?? string.Empty,
-            RecordTime = messages.FirstOrDefault(m => m.Id == h.MessageId)?.RecordTime ?? DateTime.Now,
-            Status = h.Status,
-            Success = h.Success,
-            Result = h.Result
-        }).ToList();
-        return ResultModel.Ok(data);
+            PageIndex = channelMessageHistories.PageIndex,
+            PageSize = channelMessageHistories.PageSize,
+            TotalCount = channelMessageHistories.TotalCount,
+            PageData = channelMessageHistories.PageData.Select(h => new ChannelMessageHistorySO
+            {
+                Id = h.Id,
+                MessageType = messages.FirstOrDefault(m => m.Id == h.MessageId)?.MessageType ?? MessageEnum.Text,
+                Content = messages.FirstOrDefault(m => m.Id == h.MessageId)?.Content ?? string.Empty,
+                RecordTime = messages.FirstOrDefault(m => m.Id == h.MessageId)?.RecordTime ?? DateTime.Now,
+                Status = h.Status,
+                Success = h.Success,
+                Result = h.Result
+            }).ToList()
+        };
+        return ResultModel.Ok(result);
     }
 }

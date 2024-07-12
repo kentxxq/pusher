@@ -217,15 +217,12 @@ public class RoomService
         return result.Count;
     }
 
-    public async Task<List<Message>> GetRoomMessageHistory(int roomId)
-    {
-        var roomMessage = await _repMessage.GetListAsync(m => m.RoomId == roomId) ?? [];
-        return roomMessage;
-    }
 
-    public async Task<List<Message>> GetRoomMessageHistory(List<int> roomIds)
+    public async Task<PageDataModel<Message>> GetRoomMessageHistoryWithPage(int roomId, int pageIndex, int pageSize)
     {
-        var roomMessage = await _repMessage.GetListAsync(m => roomIds.Contains(m.RoomId)) ?? [];
-        return roomMessage;
+        var p = StaticTools.CreatePageModel(pageIndex, pageSize);
+        var roomMessage = await _repMessage.GetPageListAsync(m => m.RoomId == roomId, p, m => m.Id, OrderByType.Desc) ??
+                          [];
+        return PageDataModel.Ok(roomMessage, p);
     }
 }

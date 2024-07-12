@@ -198,7 +198,9 @@ public class RoomController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ResultModel<List<RoomMessageHistorySO>>> GetRoomMessageHistory(int roomId)
+    public async Task<ResultModel<PageDataModel<RoomMessageHistorySO>>> GetRoomMessageHistoryWithPage(int roomId,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
     {
         // 是自己的room
         if (!await _roomService.IsRoomBelongsToUser(roomId, HttpContext.User.GetUserId()))
@@ -206,7 +208,14 @@ public class RoomController : ControllerBase
             throw new PusherException("room不属于你");
         }
 
-        var data = await _roomService.GetRoomMessageHistory(roomId);
-        return ResultModel.Ok(data.Select(MyMapper.MessageToRoomMessageHistorySO).ToList());
+        var data = await _roomService.GetRoomMessageHistoryWithPage(roomId, pageIndex, pageSize);
+        var result = new PageDataModel<RoomMessageHistorySO>
+        {
+            PageIndex = data.PageIndex,
+            PageSize = data.PageSize,
+            TotalCount = data.TotalCount,
+            PageData = data.PageData.Select(MyMapper.MessageToRoomMessageHistorySO).ToList()
+        };
+        return ResultModel.Ok(result);
     }
 }
