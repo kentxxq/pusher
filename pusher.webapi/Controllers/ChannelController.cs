@@ -129,7 +129,7 @@ public class ChannelController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ResultModel<PageDataModel<ChannelMessageHistorySO>>> GetChannelMessageHistory(int channelId,
+    public async Task<ResultModel<PageDataModel<ChannelMessageHistorySO>>> GetChannelMessageHistoryWithPage(int channelId,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10)
     {
