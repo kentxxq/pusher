@@ -1,3 +1,4 @@
+using pusher.webapi.Service.Database;
 using Serilog;
 using SqlSugar;
 
@@ -31,5 +32,7 @@ public static class MySqlsugarSetupExtension
                 };
             });
         builder.Services.AddSingleton<ISqlSugarClient>(sqlSugar); //这边是SqlSugarScope用AddSingleton
+        builder.Services.AddScoped(typeof(Repository<>));
+        builder.Services.AddTransient<DBService>();
     }
 }

@@ -50,9 +50,6 @@ try
 
     // 数据库
     builder.AddSqlsugarSetup();
-    builder.Services.AddTransient<DBService>();
-    builder.Services.AddScoped(typeof(Repository<>));
-
 
     // 业务service
     builder.Services.AddTransient<DashboardService>();
