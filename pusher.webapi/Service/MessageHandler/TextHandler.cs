@@ -114,7 +114,7 @@ public class TextHandler : IMessageHandler
                 }
                 else
                 {
-                    _logger.LogWarning($"管道地址{channel.ChannelUrl}发送成功");
+                    _logger.LogInformation($"管道地址{channel.ChannelUrl}发送成功");
                 }
             }
             catch (Exception e)
