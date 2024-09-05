@@ -38,23 +38,23 @@ public class DashboardController : ControllerBase
     {
         // 查出用户的消息
         var messages = await _dashboardService.GetUserMessagesInDays(HttpContext.User.GetUserId(), days);
-        var data = messages.GroupBy(m => m.RecordTime.Date.AddHours(-8))
+        var data = messages.GroupBy(m => m.RecordTime)
             .Select(g => new DateCountSO
             {
-                Date = g.Key.ToLocalTime(),
+                Date = g.Key,
                 Count = g.Count()
             })
             .ToList();
 
         // 如果没有当天的数据,就设置成0
         var dates = Enumerable.Range(0, days)
-            .Select(i => DateTimeOffset.Now.AddDays(-i).Date)
+            .Select(i => DateTimeOffset.Now.AddDays(-i))
             .ToList();
         foreach (var date in dates)
         {
-            if (!data.Select(r => r.Date).Contains(date))
+            if (!data.Select(r => r.Date.Date).Contains(date.Date))
             {
-                data.Add(new DateCountSO { Date = date.Date, Count = 0 });
+                data.Add(new DateCountSO { Date = date, Count = 0 });
             }
         }
 
