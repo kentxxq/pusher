@@ -4,7 +4,7 @@ using pusher.webapi.Enums;
 namespace pusher.webapi.Service.ChannelHandler.Telegram;
 
 /// <summary>
-///     钉钉处理信息的方法
+///     电报telegram
 /// </summary>
 public class TelegramChannelHandlerHttp : ChannelHandlerHttpBase
 {

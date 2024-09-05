@@ -5,7 +5,7 @@ using pusher.webapi.Enums;
 namespace pusher.webapi.Service.ChannelHandler;
 
 /// <summary>
-///     钉钉处理信息的方法
+///     webhook, 将内容原封不动转发到第三方
 /// </summary>
 public class WebhookChannelHandler : ChannelHandlerHttpBase
 {

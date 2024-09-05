@@ -3,7 +3,7 @@ using pusher.webapi.Enums;
 namespace pusher.webapi.Service.ChannelHandler.Lark;
 
 /// <summary>
-///     钉钉处理信息的方法
+///     飞书/lark
 /// </summary>
 public class LarkChannelHandlerHttp : ChannelHandlerHttpBase
 {

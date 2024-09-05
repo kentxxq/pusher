@@ -4,7 +4,7 @@ using pusher.webapi.Service.ChannelHandler.ComWechat;
 namespace pusher.webapi.Service.ChannelHandler.Bark;
 
 /// <summary>
-///     钉钉处理信息的方法
+///     bark https://apps.apple.com/us/app/bark-customed-notifications/id1403753865
 /// </summary>
 public class BarkChannelHandlerHttp : ChannelHandlerHttpBase
 {

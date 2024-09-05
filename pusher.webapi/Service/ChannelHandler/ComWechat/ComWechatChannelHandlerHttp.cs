@@ -3,7 +3,7 @@ using pusher.webapi.Enums;
 namespace pusher.webapi.Service.ChannelHandler.ComWechat;
 
 /// <summary>
-///     钉钉处理信息的方法
+///     企业微信
 /// </summary>
 public class ComWechatChannelHandlerHttp : ChannelHandlerHttpBase
 {

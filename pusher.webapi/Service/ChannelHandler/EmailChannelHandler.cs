@@ -3,10 +3,10 @@ using MailKit.Net.Proxy;
 using pusher.webapi.Common;
 using pusher.webapi.Enums;
 
-namespace pusher.webapi.Service.ChannelHandler.Bark;
+namespace pusher.webapi.Service.ChannelHandler;
 
 /// <summary>
-///     钉钉处理信息的方法
+///     转发到邮箱
 /// </summary>
 public class EmailChannelHandler : IChannelHandler
 {

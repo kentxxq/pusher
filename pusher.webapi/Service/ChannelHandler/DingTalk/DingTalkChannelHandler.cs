@@ -3,7 +3,7 @@ using pusher.webapi.Enums;
 namespace pusher.webapi.Service.ChannelHandler.DingTalk;
 
 /// <summary>
-///     钉钉处理信息的方法
+///     钉钉
 /// </summary>
 public class DinkTalkChannelHandlerHttp : ChannelHandlerHttpBase
 {
