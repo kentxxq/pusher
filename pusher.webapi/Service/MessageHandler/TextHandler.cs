@@ -107,6 +107,7 @@ public class TextHandler : IMessageHandler
             try
             {
                 var result = await handler.HandleText(channel.ChannelUrl, textContent, channel.ChannelProxyUrl);
+                h.Success = result.IsSuccess;
                 if (!result.IsSuccess)
                 {
                     h.Result = result.Message;
