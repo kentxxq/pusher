@@ -21,5 +21,5 @@ public class Room
     public int UserId { get; set; } = 1;
 
     [SugarColumn(IsNullable = false, ColumnDescription = "房间的创建时间")]
-    public DateTime CreateDate { get; set; }
+    public DateTimeOffset CreateDate { get; set; }
 }

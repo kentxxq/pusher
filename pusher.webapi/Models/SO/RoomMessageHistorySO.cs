@@ -10,5 +10,5 @@ public class RoomMessageHistorySO
 
     public string Content { get; set; } = null!;
 
-    public DateTime RecordTime { get; set; }
+    public DateTimeOffset RecordTime { get; set; }
 }

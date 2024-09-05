@@ -139,7 +139,7 @@ public class AdminController : ControllerBase
 
         // 如果没有当天的数据,就设置成0
         var dates = Enumerable.Range(0, days)
-            .Select(i => DateTime.Today.AddDays(-i).Date)
+            .Select(i => DateTimeOffset.Now.AddDays(-i).Date)
             .ToList();
         foreach (var date in dates)
         {

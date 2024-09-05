@@ -31,7 +31,7 @@ public class DashboardService
     {
         var messages = await GetUserMessages(userId);
         // 带入linq会生成错误的时间,应该要在c#代码中先计算出来
-        var targetDate = DateTime.Now - TimeSpan.FromDays(days);
+        var targetDate = DateTimeOffset.Now - TimeSpan.FromDays(days);
         // 特定天数内的消息
         var data = messages.Where(m => m.RecordTime > targetDate)
             .ToList();
@@ -49,7 +49,7 @@ public class DashboardService
     public async Task<List<Message>> GetAllMessagesInDays(int days)
     {
         // 带入linq会生成错误的时间,应该要在c#代码中先计算出来
-        var targetDate = DateTime.Now - TimeSpan.FromDays(days);
+        var targetDate = DateTimeOffset.Now - TimeSpan.FromDays(days);
         // 特定天数内的消息
         var messages = await _repMessage.GetListAsync(m => m.RecordTime > targetDate) ?? [];
         return messages;
@@ -63,7 +63,7 @@ public class DashboardService
     public async Task<List<string>> GetRecentMessageUsername(int days)
     {
         // 带入linq会生成错误的时间,应该要在c#代码中先计算出来
-        var targetDate = DateTime.Now - TimeSpan.FromDays(days);
+        var targetDate = DateTimeOffset.Now - TimeSpan.FromDays(days);
         // 这里比较复杂,不适合用rep来写
         // 查询最近所有消息,然后返回对应的用户名
         var data = await _sqlSugarClient.Queryable<Message>()

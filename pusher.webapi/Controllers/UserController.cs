@@ -100,10 +100,10 @@ public class UserController : ControllerBase
         else
         {
             // 10分钟只允许发送一封邮件
-            if (user.LastForgetTime is null || DateTime.Now - user.LastForgetTime > TimeSpan.FromMinutes(10))
+            if (user.LastForgetTime is null || DateTimeOffset.Now - user.LastForgetTime > TimeSpan.FromMinutes(10))
             {
                 password = user.Password;
-                user.LastForgetTime = DateTime.Now;
+                user.LastForgetTime = DateTimeOffset.Now;
                 await _userService.UpdateUser(user);
             }
             else

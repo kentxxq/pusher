@@ -83,7 +83,7 @@ public class CleanUselessInfo : IJob
     {
         var expiredMessageId =
             await _repMessage.GetListAsync(m =>
-                (DateTime.Now - m.RecordTime).Days > _dataOptions.CurrentValue.MessageRetentionPeriod);
+                (DateTimeOffset.Now - m.RecordTime).Days > _dataOptions.CurrentValue.MessageRetentionPeriod);
 
         await _repMessage.DeleteAsync(m => expiredMessageId.Select(e => e.Id).Contains(m.Id));
         await _repChannelMessageHistory.DeleteAsync(c => expiredMessageId.Select(e => e.Id).Contains(c.MessageId));

@@ -50,7 +50,7 @@ public class UserService
 
         _logger.LogInformation("用户{username}登录成功", username);
 
-        user.LastLoginTime = DateTime.Now;
+        user.LastLoginTime = DateTimeOffset.Now;
         await _repUser.UpdateAsync(user);
         var token = _jwtService.GetToken(user.Id, user.Username, [user.RoleType.ToStringFast()]);
         return token;
@@ -211,7 +211,7 @@ public class UserService
         {
             RoomName = "示例-房间名",
             RoomCode = Guid.NewGuid().ToString("D"),
-            CreateDate = DateTime.Now,
+            CreateDate = DateTimeOffset.Now,
             UserId = userId
         };
         var roomId = await _repRoom.InsertReturnIdentityAsync(demoRoom);

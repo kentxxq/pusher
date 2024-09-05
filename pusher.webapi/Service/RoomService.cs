@@ -149,7 +149,7 @@ public class RoomService
             RoomCode = roomCode,
             UserId = userId,
             RoomKey = roomKey,
-            CreateDate = DateTime.Now
+            CreateDate = DateTimeOffset.Now
         };
         var id = await _repRoom.InsertReturnIdentityAsync(room);
         return id;

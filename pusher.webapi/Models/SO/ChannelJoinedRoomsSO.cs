@@ -6,5 +6,5 @@ public class ChannelJoinedRoomsSO
     public string RoomName { get; set; } = null!;
     public string RoomCode { get; set; }
     public int UserId { get; set; } = 1;
-    public DateTime CreateDate { get; set; }
+    public DateTimeOffset CreateDate { get; set; }
 }

@@ -54,7 +54,7 @@ public static class MyQuartz
             //q.AddTrigger(t => t
             //    .WithIdentity("Cron Trigger")
             //    .ForJob(jobKey)
-            //    .StartAt(DateBuilder.EvenSecondDate(DateTimeOffset.UtcNow.AddSeconds(3)))
+            //    .StartAt(DateBuilder.EvenSecondDate(DateTimeOffsetOffset.UtcNow.AddSeconds(3)))
             //    .WithCronSchedule("0/3 * * * * ?")
             //    .WithDescription("my awesome cron trigger")
             //);

@@ -41,7 +41,8 @@ public class JWTService
             throw new Exception("jwt没有完成配置");
         }
 
-        return JWTool.CreateTokenString(userId, username, roleType, secret, DateTime.Now.AddDays(expireDay), issuer,
+        return JWTool.CreateTokenString(userId, username, roleType, secret, DateTimeOffset.Now.AddDays(expireDay),
+            issuer,
             audience);
     }
 }

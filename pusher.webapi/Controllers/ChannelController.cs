@@ -129,7 +129,8 @@ public class ChannelController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ResultModel<PageDataModel<ChannelMessageHistorySO>>> GetChannelMessageHistoryWithPage(int channelId,
+    public async Task<ResultModel<PageDataModel<ChannelMessageHistorySO>>> GetChannelMessageHistoryWithPage(
+        int channelId,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10)
     {
@@ -154,7 +155,7 @@ public class ChannelController : ControllerBase
                 Id = h.Id,
                 MessageType = messages.FirstOrDefault(m => m.Id == h.MessageId)?.MessageType ?? MessageEnum.Text,
                 Content = messages.FirstOrDefault(m => m.Id == h.MessageId)?.Content ?? string.Empty,
-                RecordTime = messages.FirstOrDefault(m => m.Id == h.MessageId)?.RecordTime ?? DateTime.Now,
+                RecordTime = messages.FirstOrDefault(m => m.Id == h.MessageId)?.RecordTime ?? DateTimeOffset.Now,
                 Status = h.Status,
                 Success = h.Success,
                 Result = h.Result

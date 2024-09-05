@@ -19,8 +19,8 @@ public class User
     public RoleType RoleType { get; set; } = RoleType.Free;
 
     [SugarColumn(IsNullable = true, ColumnDescription = "上一次发送密码邮件的时间")]
-    public DateTime? LastForgetTime { get; set; }
+    public DateTimeOffset? LastForgetTime { get; set; }
 
     [SugarColumn(IsNullable = true, ColumnDescription = "最近一次登录时间")]
-    public DateTime? LastLoginTime { get; set; }
+    public DateTimeOffset? LastLoginTime { get; set; }
 }
