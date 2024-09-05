@@ -38,9 +38,10 @@ public class DashboardController : ControllerBase
     {
         // 查出用户的消息
         var messages = await _dashboardService.GetUserMessagesInDays(HttpContext.User.GetUserId(), days);
-        var data = messages.GroupBy(m => m.RecordTime)
+        var data = messages.GroupBy(m => m.RecordTime.Date)
             .Select(g => new DateCountSO
             {
+                // 不指定时区,不指定DateTimeKind为utc. 直接把datetime赋值给datetimeoffset,默认会加上服务器的时区
                 Date = g.Key,
                 Count = g.Count()
             })
