@@ -156,7 +156,7 @@ public class RoomService
     }
 
     /// <summary>
-    ///     删除房间
+    ///     删除房间. 级联删除关联关系,room的message记录
     /// </summary>
     /// <param name="roomIdList"></param>
     /// <returns></returns>
@@ -165,6 +165,7 @@ public class RoomService
         if (await _repRoom.DeleteByIdsAsync(roomIdList.Cast<object>().ToArray()))
         {
             await _repRoomWithChannel.DeleteAsync(r => roomIdList.Contains(r.RoomId));
+            await _repMessage.DeleteAsync(m => roomIdList.Contains(m.RoomId));
             return true;
         }
 
