@@ -10,5 +10,6 @@ public enum ChannelEnum
     [Display(Name = "电报")] Telegram,
     [Display(Name = "Bark")] Bark,
     [Display(Name = "邮箱")] Email,
-    [Display(Name = "Webhook")] Webhook
+    [Display(Name = "Webhook")] Webhook,
+    [Display(Name = "Qmsg")]Qmsg,
 }
