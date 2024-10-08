@@ -120,6 +120,7 @@ public class TextHandler : IMessageHandler
             }
             catch (Exception e)
             {
+                h.Result = $"pusher内部错误: {e.Message}";
                 _logger.LogWarning($"管道地址{channel.ChannelUrl}报错,{e.Message}");
             }
             finally
