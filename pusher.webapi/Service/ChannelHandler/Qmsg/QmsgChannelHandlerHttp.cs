@@ -40,9 +40,6 @@ public class QmsgChannelHandlerHttp : ChannelHandlerHttpBase
         req.Content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, MediaTypeNames.Application.Json);
         var httpResponseMessage = await httpClient.SendAsync(req);
 
-        req.Content = JsonContent.Create(data);
-        req.Headers.TransferEncodingChunked = false;
-
         var result = await httpResponseMessage.Content.ReadFromJsonAsync<QmsgResponse>();
         return result?.Success == true
             ? new HandlerResult { IsSuccess = true }
