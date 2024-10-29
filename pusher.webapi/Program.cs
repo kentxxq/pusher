@@ -98,10 +98,11 @@ try
     // 处理403,401这些400-599之间的状态码
     app.UseStatusCodePages(async statusCodeContext =>
     {
-        statusCodeContext.HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
-        statusCodeContext.HttpContext.Response.StatusCode = StatusCodes.Status200OK;
+        app.Logger.LogInformation("状态码:{StatusCode}", statusCodeContext.HttpContext.Response.StatusCode);
         var result = ResultModel.Error(statusCodeContext.HttpContext.Response.StatusCode.ToString(),
             statusCodeContext.HttpContext.Response.StatusCode);
+        statusCodeContext.HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
+        statusCodeContext.HttpContext.Response.StatusCode = StatusCodes.Status200OK;
         await statusCodeContext.HttpContext.Response.WriteAsJsonAsync(result);
     });
 
