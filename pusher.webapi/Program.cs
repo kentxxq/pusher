@@ -6,7 +6,6 @@ using pusher.webapi.Extensions;
 using pusher.webapi.Jobs;
 using pusher.webapi.Options;
 using pusher.webapi.Service;
-using pusher.webapi.Service.Database;
 using pusher.webapi.Service.MessageHandler;
 using Serilog;
 
@@ -96,10 +95,11 @@ try
         });
     });
 
-    // 处理403,401等状态码
+    // 处理403,401这些400-599之间的状态码
     app.UseStatusCodePages(async statusCodeContext =>
     {
         statusCodeContext.HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
+        statusCodeContext.HttpContext.Response.StatusCode = StatusCodes.Status200OK;
         var result = ResultModel.Error(statusCodeContext.HttpContext.Response.StatusCode.ToString(),
             statusCodeContext.HttpContext.Response.StatusCode);
         await statusCodeContext.HttpContext.Response.WriteAsJsonAsync(result);
