@@ -7,6 +7,7 @@ using pusher.webapi.Jobs;
 using pusher.webapi.Options;
 using pusher.webapi.Service;
 using pusher.webapi.Service.MessageHandler;
+using Scalar.AspNetCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,7 +40,7 @@ try
             options.InvalidModelStateResponseFactory = ValidationProblemDetails.MakeValidationResponse;
         });
     builder.Services.AddSingleton<JWTService>();
-    builder.Services.AddMySwagger();
+    builder.Services.AddOpenApi(options => { options.AddDocumentTransformer<BearerSecuritySchemeTransformer>(); });
     builder.AddMyJWT();
     builder.Services.AddTransient<EmailService>();
     builder.AddMyQuartz();
@@ -112,13 +113,23 @@ try
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
-        app.UseSwagger(options => { options.SerializeAsV2 = true; }); // 不这么配置,无法读取/swagger/v1/swagger.json
-        app.UseSwaggerUI(u =>
+        app.MapOpenApi();
+        app.MapScalarApiReference(options =>
         {
-            // 拦截 /swagger/v1/swagger.json 到 SwaggerDoc的v1
-            u.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-            // 右上角会有2个选项
-            u.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
+            options.Servers = [];
+
+            // 必须配置2个才能让WithHttpBearerAuthentication生效 https://github.com/scalar/scalar/issues/3927
+            // Basic
+            options
+                .WithPreferredScheme("Basic") // Security scheme name from the OpenAPI document
+                .WithHttpBasicAuthentication(basic =>
+                {
+                    basic.Username = "your-username";
+                    basic.Password = "your-password";
+                });
+
+            options.WithPreferredScheme("Bearer")
+                .WithHttpBearerAuthentication(bearer => { bearer.Token = "your-bearer-token"; });
         });
     }
 

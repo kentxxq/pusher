@@ -17,6 +17,7 @@
     <PackageReference Include="Quartz.Serialization.Json" Version="3.13.1"/>
     <PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.13.1"/>
     <PackageReference Include="Riok.Mapperly" Version="4.1.1"/>
+    <PackageReference Include="Scalar.AspNetCore" Version="1.2.48"/>
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
@@ -31,7 +32,6 @@
     <PackageReference Include="IdentityModel" Version="7.0.0"/>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0"/>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.1.0"/>
     <PackageReference Include="NetEscapades.EnumGenerators" Version="1.0.0-beta08" PrivateAssets="all" ExcludeAssets="runtime">
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
