@@ -21,21 +21,21 @@ public class EnumsController : ControllerBase
     public ResultModel<List<EnumObject>> ResultStatusApi()
     {
         // var data = typeof(ResultStatus).EnumToEnumObject<ResultStatus>();
-        var data = ResultStatus.Success.EnumToEnumObject2();
+        var data = ResultStatus.Success.EnumValueToEnumObject();
         return ResultModel.Ok(data);
     }
 
     [HttpGet]
     public ResultModel<List<EnumObject>> ChannelEnumApi()
     {
-        var data = ChannelEnum.Lark.EnumToEnumObject2();
+        var data = ChannelEnum.Lark.EnumValueToEnumObject();
         return ResultModel.Ok(data);
     }
 
     [HttpGet]
     public ResultModel<List<EnumObject>> RoleEnumApi()
     {
-        var data = RoleType.Free.EnumToEnumObject2();
+        var data = RoleType.Free.EnumValueToEnumObject();
         return ResultModel.Ok(data);
     }
 }

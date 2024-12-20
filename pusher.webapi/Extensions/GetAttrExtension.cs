@@ -11,7 +11,10 @@ namespace pusher.webapi.Extensions;
 /// </summary>
 public static class GetAttrExtension
 {
-    public static List<EnumObject> EnumToEnumObject<T>(this Type enumType) where T : Enum
+    /// <summary>
+    ///     typeof(MyEnum).EnumToEnumObject<MyEnum>()
+    /// </summary>
+    public static List<EnumObject> EnumTypeToEnumObject<T>(this Type enumType) where T : Enum
     {
         if (!enumType.IsEnum)
         {
@@ -32,7 +35,10 @@ public static class GetAttrExtension
         return enumList;
     }
 
-    public static List<EnumObject> EnumToEnumObject2<T>(this T enumType) where T : Enum
+    /// <summary>
+    ///     MyEnum.Value1.EnumToEnumObject2();
+    /// </summary>
+    public static List<EnumObject> EnumValueToEnumObject<T>(this T enumType) where T : Enum
     {
         var enumList = new List<EnumObject>();
         var t = enumType.GetType();
