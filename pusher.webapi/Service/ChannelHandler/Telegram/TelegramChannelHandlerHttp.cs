@@ -5,6 +5,7 @@ namespace pusher.webapi.Service.ChannelHandler.Telegram;
 
 /// <summary>
 ///     电报telegram
+/// https://core.telegram.org/bots/api#sendmessage
 /// </summary>
 public class TelegramChannelHandlerHttp : ChannelHandlerHttpBase
 {
@@ -24,9 +25,10 @@ public class TelegramChannelHandlerHttp : ChannelHandlerHttpBase
         var uri = new Uri(url);
         var queryString = HttpUtility.ParseQueryString(uri.Query);
         var chatId = queryString["chatId"] ?? string.Empty;
+        var messageThreadId = queryString["message_thread_id"];
         // 因为url带了参数,所以截断一下
         var realUrl = url.Split('?')[0];
-        var data = new TelegramText { ChatId = chatId, Text = content };
+        var data = new TelegramText { ChatId = chatId, Text = content, MessageThreadId = messageThreadId };
 
         var httpClient = GetHttpClient(proxy);
         var httpResponseMessage = await httpClient.PostAsJsonAsync(realUrl, data);
