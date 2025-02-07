@@ -10,15 +10,15 @@
   <ItemGroup>
     <PackageReference Include="EmailValidation" Version="1.2.0"/>
     <PackageReference Include="Handlebars.Net" Version="2.1.6"/>
-    <PackageReference Include="JsonPath.Net" Version="2.0.0"/>
-    <PackageReference Include="MailKit" Version="4.8.0" />
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0"/>
+    <PackageReference Include="JsonPath.Net" Version="2.1.1"/>
+    <PackageReference Include="MailKit" Version="4.10.0"/>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.1.0"/>
     <PackageReference Include="Quartz.AspNetCore" Version="3.13.1"/>
     <PackageReference Include="Quartz.Serialization.Json" Version="3.13.1"/>
     <PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.13.1"/>
     <PackageReference Include="Riok.Mapperly" Version="4.1.1"/>
-    <PackageReference Include="Scalar.AspNetCore" Version="1.2.48"/>
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
+    <PackageReference Include="Scalar.AspNetCore" Version="2.0.12"/>
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0"/>
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageReference Include="Serilog.Logfmt" Version="1.0.3"/>
@@ -30,12 +30,12 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="IdentityModel" Version="7.0.0"/>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0"/>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0"/>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.1"/>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1"/>
     <PackageReference Include="NetEscapades.EnumGenerators" Version="1.0.0-beta08" PrivateAssets="all" ExcludeAssets="runtime">
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SqlSugarCore" Version="5.1.4.170"/>
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.175"/>
   </ItemGroup>
 
   <ItemGroup>
