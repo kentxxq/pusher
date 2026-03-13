@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Extensions;
+using Microsoft.OpenApi;
 using pusher.webapi.Common;
 using pusher.webapi.Enums;
 using pusher.webapi.Models.DB;
