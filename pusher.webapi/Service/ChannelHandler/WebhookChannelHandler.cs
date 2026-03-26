@@ -1,6 +1,7 @@
 using System.Net.Mime;
 using System.Text;
 using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
@@ -21,8 +22,10 @@ public class WebhookChannelHandler : ChannelHandlerHttpBase
         return channelType == ChannelEnum.Webhook;
     }
 
-    public override async Task<HandlerResult> HandleText(string url, string content, string proxy)
+    public override async Task<HandlerResult> HandleText(Channel channel, string content)
     {
+        var url = channel.ChannelUrl;
+        var proxy = channel.ChannelProxyUrl ?? string.Empty;
         // var data = JsonContent.Create(content);
         var data = new StringContent(content, Encoding.UTF8, MediaTypeNames.Application.Json);
         var httpClient = GetHttpClient(proxy);

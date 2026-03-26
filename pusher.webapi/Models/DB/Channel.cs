@@ -21,6 +21,9 @@ public class Channel
     [SugarColumn(ColumnDescription = "管道代理地址", IsNullable = true)]
     public string? ChannelProxyUrl { get; set; }
 
-    [SugarColumn(ColumnDescription = "所属用户id")]
+    [SugarColumn(ColumnDescription = "管道所属用户id")]
     public int UserId { get; set; } = 1;
+
+    [SugarColumn(ColumnDescription = "管道特有配置(JSON)", IsNullable = true, ColumnDataType = "text")]
+    public string? ChannelConfig { get; set; }
 }

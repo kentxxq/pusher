@@ -1,4 +1,5 @@
 using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
@@ -18,5 +19,5 @@ public interface IChannelHandler
     ///     处理实现
     /// </summary>
     /// <returns></returns>
-    Task<HandlerResult> HandleText(string url, string content, string proxy);
+    Task<HandlerResult> HandleText(Channel channel, string content);
 }

@@ -1,5 +1,6 @@
 using System.Web;
 using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 
 namespace pusher.webapi.Service.ChannelHandler.Telegram;
 
@@ -19,8 +20,10 @@ public class TelegramChannelHandlerHttp : ChannelHandlerHttpBase
         return channelType == ChannelEnum.Telegram;
     }
 
-    public override async Task<HandlerResult> HandleText(string url, string content, string proxy)
+    public override async Task<HandlerResult> HandleText(Channel channel, string content)
     {
+        var url = channel.ChannelUrl;
+        var proxy = channel.ChannelProxyUrl ?? string.Empty;
         // url中会传递chatId,这里提取出来
         var uri = new Uri(url);
         var queryString = HttpUtility.ParseQueryString(uri.Query);

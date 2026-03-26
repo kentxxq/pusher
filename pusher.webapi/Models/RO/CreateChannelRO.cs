@@ -8,4 +8,5 @@ public class CreateChannelRO
     public ChannelEnum ChannelType { get; set; }
     public string ChannelUrl { get; set; }
     public string ChannelProxyUrl { get; set; }
+    public string? ChannelConfig { get; set; }
 }

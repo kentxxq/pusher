@@ -2,6 +2,7 @@ using System.Net;
 using MailKit.Net.Proxy;
 using pusher.webapi.Common;
 using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
@@ -23,9 +24,11 @@ public class EmailChannelHandler : IChannelHandler
         return channelType == ChannelEnum.Email;
     }
 
-    public async Task<HandlerResult> HandleText(string url, string content, string proxy)
+    public async Task<HandlerResult> HandleText(Channel channel, string content)
     {
         bool result;
+        var url = channel.ChannelUrl;
+        var proxy = channel.ChannelProxyUrl ?? string.Empty;
         if (!string.IsNullOrEmpty(proxy))
         {
             var webProxy = StaticTools.GetWebproxyFromString(proxy);

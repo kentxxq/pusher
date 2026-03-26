@@ -35,11 +35,11 @@ public class DBService
                 new SqliteConnectionStringBuilder(_sugarClient.CurrentConnectionConfig.ConnectionString);
             if (File.Exists(sqliteConnectionStringBuilder.DataSource))
             {
-                _logger.LogInformation($"检测到数据库文件{sqliteConnectionStringBuilder.DataSource}");
+                _logger.LogInformation($"检测到[Sqlite]数据库文件{sqliteConnectionStringBuilder.DataSource}");
             }
             else
             {
-                _logger.LogInformation($"数据库{sqliteConnectionStringBuilder.DataSource}不存在");
+                _logger.LogInformation($"[Sqlite]数据库{sqliteConnectionStringBuilder.DataSource}不存在");
                 CreateDatabase();
             }
 
@@ -48,16 +48,17 @@ public class DBService
         }
         else // 其他类型数据库
         {
+            var dbType = _sugarClient.CurrentConnectionConfig.DbType.ToString();
             try
             {
                 _sugarClient.Ado.CheckConnection();
-                _logger.LogInformation("数据库连接成功");
+                _logger.LogInformation($"[{dbType}]数据库连接成功");
                 SyncTable();
                 await CreateAdminUser();
             }
             catch (Exception)
             {
-                _logger.LogInformation("数据库连接失败");
+                _logger.LogInformation($"[{dbType}]数据库连接失败");
                 // mysql是先建库,然后授权.所以不需要建库了
                 // CreateDatabase(db);
                 SyncTable();

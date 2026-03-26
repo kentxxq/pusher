@@ -2,6 +2,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 
 namespace pusher.webapi.Service.ChannelHandler.Qmsg;
 
@@ -21,8 +22,10 @@ public class QmsgChannelHandlerHttp : ChannelHandlerHttpBase
     }
 
     /// <inheritdoc />
-    public override async Task<HandlerResult> HandleText(string url, string content, string proxy)
+    public override async Task<HandlerResult> HandleText(Channel channel, string content)
     {
+        var url = channel.ChannelUrl;
+        var proxy = channel.ChannelProxyUrl ?? string.Empty;
         var data = new QmsgText { Msg = content };
         var httpClient = GetHttpClient(proxy);
 

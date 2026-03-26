@@ -1,5 +1,6 @@
-﻿using pusher.webapi.Common;
+using pusher.webapi.Common;
 using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 
 namespace pusher.webapi.Service.ChannelHandler;
 
@@ -14,7 +15,7 @@ public abstract class ChannelHandlerHttpBase : IChannelHandler
 
     public abstract bool CanHandle(ChannelEnum channelType);
 
-    public abstract Task<HandlerResult> HandleText(string url, string content, string proxy);
+    public abstract Task<HandlerResult> HandleText(Channel channel, string content);
 
     /// <summary>
     ///     获取httpclient

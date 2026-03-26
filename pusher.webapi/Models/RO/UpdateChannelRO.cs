@@ -1,4 +1,4 @@
-﻿using pusher.webapi.Enums;
+using pusher.webapi.Enums;
 
 namespace pusher.webapi.Models.RO;
 
@@ -13,4 +13,6 @@ public class UpdateChannelRO
     public string ChannelUrl { get; set; }
 
     public string? ChannelProxyUrl { get; set; }
+
+    public string? ChannelConfig { get; set; }
 }

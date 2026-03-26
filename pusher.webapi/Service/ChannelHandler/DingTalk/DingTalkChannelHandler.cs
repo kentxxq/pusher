@@ -1,4 +1,5 @@
 using pusher.webapi.Enums;
+using pusher.webapi.Models.DB;
 
 namespace pusher.webapi.Service.ChannelHandler.DingTalk;
 
@@ -17,8 +18,10 @@ public class DinkTalkChannelHandlerHttp : ChannelHandlerHttpBase
         return channelType == ChannelEnum.DingTalk;
     }
 
-    public override async Task<HandlerResult> HandleText(string url, string content, string proxy)
+    public override async Task<HandlerResult> HandleText(Channel channel, string content)
     {
+        var url = channel.ChannelUrl;
+        var proxy = channel.ChannelProxyUrl ?? string.Empty;
         var data = new DingTalkText { Content = new DingTalkTextContent { Text = content } };
         var httpClient = GetHttpClient(proxy);
         var httpResponseMessage = await httpClient.PostAsJsonAsync(url, data);
