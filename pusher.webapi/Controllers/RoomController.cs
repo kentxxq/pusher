@@ -44,7 +44,9 @@ public class RoomController : ControllerBase
     public async Task<ResultModel<string>> SendMessageByGet([FromRoute] [Required] string roomCode,
         [FromQuery] [Required] string content, [FromQuery] string roomKey = "")
     {
-        var result = await _roomService.HandleMessage(roomCode, roomKey, new MessageInfo { Content = content });
+        var extraParams = GetExtraParams(["content", "roomKey"]);
+        var result = await _roomService.HandleMessage(roomCode, roomKey,
+            new MessageInfo { Content = content, ExtraParams = extraParams });
         return ResultModel.Ok($"房间{roomCode}接收请求：{result}");
     }
 
@@ -67,14 +69,30 @@ public class RoomController : ControllerBase
         [FromQuery] MessageEnum messageType = MessageEnum.Text
     )
     {
+        var extraParams = GetExtraParams(["roomKey", "templateCode", "messageType"]);
         var result = await _roomService.HandleMessage(roomCode, roomKey,
             new MessageInfo
             {
                 MessageType = messageType,
                 Content = data,
-                TemplateCode = templateCode
+                TemplateCode = templateCode,
+                ExtraParams = extraParams
             });
         return ResultModel.Ok($"房间{roomCode}接收请求：{result}");
+    }
+
+    private Dictionary<string, object> GetExtraParams(string[] excludeKeys)
+    {
+        var extraParams = new Dictionary<string, object>();
+        foreach (var key in HttpContext.Request.Query.Keys)
+        {
+            if (!excludeKeys.Contains(key))
+            {
+                extraParams[key] = HttpContext.Request.Query[key].ToString();
+            }
+        }
+
+        return extraParams;
     }
 
     /// <summary>

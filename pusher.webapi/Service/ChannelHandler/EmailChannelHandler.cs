@@ -24,7 +24,7 @@ public class EmailChannelHandler : IChannelHandler
         return channelType == ChannelEnum.Email;
     }
 
-    public async Task<HandlerResult> HandleText(Channel channel, string content)
+    public async Task<HandlerResult> HandleText(Channel channel, string content, Dictionary<string, object>? extraParams = null)
     {
         bool result;
         var url = channel.ChannelUrl;

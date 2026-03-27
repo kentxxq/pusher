@@ -15,7 +15,7 @@ public abstract class ChannelHandlerHttpBase : IChannelHandler
 
     public abstract bool CanHandle(ChannelEnum channelType);
 
-    public abstract Task<HandlerResult> HandleText(Channel channel, string content);
+    public abstract Task<HandlerResult> HandleText(Channel channel, string content, Dictionary<string, object>? extraParams = null);
 
     /// <summary>
     ///     获取httpclient

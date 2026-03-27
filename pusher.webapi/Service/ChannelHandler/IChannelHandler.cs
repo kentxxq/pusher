@@ -19,5 +19,5 @@ public interface IChannelHandler
     ///     处理实现
     /// </summary>
     /// <returns></returns>
-    Task<HandlerResult> HandleText(Channel channel, string content);
+    Task<HandlerResult> HandleText(Channel channel, string content, Dictionary<string, object>? extraParams = null);
 }

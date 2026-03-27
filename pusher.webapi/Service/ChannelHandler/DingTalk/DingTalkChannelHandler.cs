@@ -18,7 +18,7 @@ public class DinkTalkChannelHandlerHttp : ChannelHandlerHttpBase
         return channelType == ChannelEnum.DingTalk;
     }
 
-    public override async Task<HandlerResult> HandleText(Channel channel, string content)
+    public override async Task<HandlerResult> HandleText(Channel channel, string content, Dictionary<string, object>? extraParams = null)
     {
         var url = channel.ChannelUrl;
         var proxy = channel.ChannelProxyUrl ?? string.Empty;

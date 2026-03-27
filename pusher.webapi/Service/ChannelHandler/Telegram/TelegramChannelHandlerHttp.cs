@@ -20,7 +20,7 @@ public class TelegramChannelHandlerHttp : ChannelHandlerHttpBase
         return channelType == ChannelEnum.Telegram;
     }
 
-    public override async Task<HandlerResult> HandleText(Channel channel, string content)
+    public override async Task<HandlerResult> HandleText(Channel channel, string content, Dictionary<string, object>? extraParams = null)
     {
         var url = channel.ChannelUrl;
         var proxy = channel.ChannelProxyUrl ?? string.Empty;
@@ -31,7 +31,26 @@ public class TelegramChannelHandlerHttp : ChannelHandlerHttpBase
         var messageThreadId = queryString["message_thread_id"];
         // 因为url带了参数,所以截断一下
         var realUrl = url.Split('?')[0];
-        var data = new TelegramText { ChatId = chatId, Text = content, MessageThreadId = messageThreadId };
+
+        var data = new Dictionary<string, object>
+        {
+            { "chat_id", chatId },
+            { "text", content }
+        };
+
+        if (!string.IsNullOrEmpty(messageThreadId))
+        {
+            data["message_thread_id"] = messageThreadId;
+        }
+
+        // 合并透传参数
+        if (extraParams != null)
+        {
+            foreach (var kv in extraParams)
+            {
+                data[kv.Key] = kv.Value;
+            }
+        }
 
         var httpClient = GetHttpClient(proxy);
         var httpResponseMessage = await httpClient.PostAsJsonAsync(realUrl, data);

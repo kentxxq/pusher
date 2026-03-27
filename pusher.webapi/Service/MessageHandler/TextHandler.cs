@@ -106,7 +106,7 @@ public class TextHandler : IMessageHandler
 
             try
             {
-                var result = await handler.HandleText(channel, textContent);
+                var result = await handler.HandleText(channel, textContent, messageInfo.ExtraParams);
                 h.Success = result.IsSuccess;
                 if (!result.IsSuccess)
                 {
