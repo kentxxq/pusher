@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using HandlebarsDotNet;
 using Json.Path;
@@ -158,7 +159,42 @@ public class TextHandler : IMessageHandler
         // 存放解析后的值
         var dataDictionary = new Dictionary<string, object>();
         // 开始取值
-        var instance = JsonNode.Parse(messageInfo.Content.ToString() ?? string.Empty);
+        JsonNode instance;
+        try
+        {
+            var contentStr = messageInfo.Content.ToString() ?? string.Empty;
+            instance = JsonNode.Parse(contentStr) ?? new JsonObject();
+        }
+        catch (Exception)
+        {
+            // 如果解析失败(不是合法的json)，创建一个新的对象，并把 content 放进去
+            var obj = new JsonObject();
+            obj["content"] = messageInfo.Content.ToString();
+            instance = obj;
+        }
+
+        // 将 ExtraParams 合并到 instance 中，以便 JsonPath 可以访问
+        if (messageInfo.ExtraParams != null && instance is JsonObject jsonObject)
+        {
+            foreach (var extraParam in messageInfo.ExtraParams)
+            {
+                // 如果 body 里已经有了(来自 content 解析)，则不覆盖
+                if (jsonObject[extraParam.Key] == null)
+                {
+                    try
+                    {
+                        // 尝试序列化以处理不同类型的 object
+                        var jsonValue = JsonSerializer.Serialize(extraParam.Value);
+                        jsonObject[extraParam.Key] = JsonNode.Parse(jsonValue);
+                    }
+                    catch
+                    {
+                        jsonObject[extraParam.Key] = extraParam.Value?.ToString();
+                    }
+                }
+            }
+        }
+
         foreach (var variable in stringTemplate.StringTemplateObject.Variables)
         {
             var path = JsonPath.Parse(variable.JsonPath);
@@ -166,7 +202,7 @@ public class TextHandler : IMessageHandler
             // 如果解析失败,纪录日志. 并且返回空字符串
             try
             {
-                value = path.Evaluate(instance).Matches?.First().Value?.ToString() ?? string.Empty;
+                value = path.Evaluate(instance).Matches?.FirstOrDefault()?.Value?.ToString() ?? string.Empty;
             }
             catch (Exception e)
             {
