@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pusher.webapi.Common;
@@ -63,18 +64,42 @@ public class RoomController : ControllerBase
     [HttpPost("{roomCode}")]
     public async Task<ResultModel<string>> SendMessageByPost(
         [FromRoute] string roomCode,
-        [FromBody] [Required] object data,
+        [FromBody] [Required] JsonElement data,
         [FromQuery] string roomKey = "",
         [FromQuery] string templateCode = "",
         [FromQuery] MessageEnum messageType = MessageEnum.Text
     )
     {
+        // URL 透传参数
         var extraParams = GetExtraParams(["roomKey", "templateCode", "messageType"]);
+
+        // POST body 中系统使用的字段，不透传
+        var systemBodyKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "content" };
+
+        object content = data; // 默认整个 body 作为 content
+        if (data.ValueKind == JsonValueKind.Object)
+        {
+            // 尝试从 body 中提取 content 字段
+            if (data.TryGetProperty("content", out var contentProp))
+            {
+                content = contentProp.ToString();
+            }
+
+            // 非系统字段透传到 extraParams（body 参数覆盖同名 URL 参数）
+            foreach (var prop in data.EnumerateObject())
+            {
+                if (!systemBodyKeys.Contains(prop.Name))
+                {
+                    extraParams[prop.Name] = prop.Value.ToString();
+                }
+            }
+        }
+
         var result = await _roomService.HandleMessage(roomCode, roomKey,
             new MessageInfo
             {
                 MessageType = messageType,
-                Content = data,
+                Content = content,
                 TemplateCode = templateCode,
                 ExtraParams = extraParams
             });
