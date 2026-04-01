@@ -70,11 +70,23 @@ public class RoomController : ControllerBase
         [FromQuery] MessageEnum messageType = MessageEnum.Text
     )
     {
-        // URL 透传参数
+        // Bark 支持的所有透传参数白名单
+        var allowExtraKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "title", "group", "icon", "sound", "url", "isArchive", "level", "badge", "autoCopy", "copy", "volume"
+        };
+
+        // 1. 先从 URL 获取透传参数 (排除系统参数)
         var extraParams = GetExtraParams(["roomKey", "templateCode", "messageType"]);
 
-        // POST body 中系统使用的字段，不透传
-        var systemBodyKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "content" };
+        // 2. 过滤掉不在白名单中的 URL 参数
+        foreach (var key in extraParams.Keys.ToList())
+        {
+            if (!allowExtraKeys.Contains(key))
+            {
+                extraParams.Remove(key);
+            }
+        }
 
         object content = data; // 默认整个 body 作为 content
         if (data.ValueKind == JsonValueKind.Object)
@@ -85,10 +97,10 @@ public class RoomController : ControllerBase
                 content = contentProp.ToString();
             }
 
-            // 非系统字段透传到 extraParams（body 参数覆盖同名 URL 参数）
+            // 3. 从 POST body 中提取白名单参数（Body 参数优先级高，覆盖同名 URL 参数）
             foreach (var prop in data.EnumerateObject())
             {
-                if (!systemBodyKeys.Contains(prop.Name))
+                if (allowExtraKeys.Contains(prop.Name))
                 {
                     extraParams[prop.Name] = prop.Value.ToString();
                 }
