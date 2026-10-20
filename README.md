@@ -1,9 +1,9 @@
-访问地址
-- 项目地址: [pusher.kentxxq.com](https://pusher.kentxxq.com)
-- 文档地址: [pusher-docs.kentxxq.com](https://pusher-docs.kentxxq.com)
+# Pusher 旧版存档
 
-源码
-- 前端: [https://github.com/kentxxq/pusher-ui](https://github.com/kentxxq/pusher-ui)
-- 后端: [https://github.com/kentxxq/pusher](https://github.com/kentxxq/pusher)
-- 文档: [https://github.com/kentxxq/pusher-docs](https://github.com/kentxxq/pusher-docs)
+本分支仅用于存档，目录如下：
 
+| 目录 | 内容 |
+| --- | --- |
+| `pusher/` | 旧版后端源码 |
+| `pusher-ui/` | 旧版前端源码 |
+| `pusher-docs/` | 旧版文档网站源码 |

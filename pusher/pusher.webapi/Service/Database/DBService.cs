@@ -113,16 +113,16 @@ public class DBService
     /// </summary>
     public async Task<int> CreateAdminUser()
     {
-        var user = await _sugarClient.Queryable<User>().Where(u => u.Username == "ken").FirstAsync();
+        var user = await _sugarClient.Queryable<User>().Where(u => u.Username == "fake_user").FirstAsync();
         if (user is null)
         {
-            var initUser = new User { Username = "ken", Password = "ken", RoleType = RoleType.Admin };
+            var initUser = new User { Username = "fake_user", Password = "fake_password", RoleType = RoleType.Admin };
             var id = await _sugarClient.Insertable(initUser).ExecuteReturnIdentityAsync();
-            _logger.LogInformation("初始化ken用户成功");
+            _logger.LogInformation("初始化fake_user用户成功");
             return id;
         }
 
-        _logger.LogInformation("ken用户已存在,不插入新数据");
+        _logger.LogInformation("fake_user用户已存在,不插入新数据");
         return user.Id;
     }
 
@@ -132,7 +132,7 @@ public class DBService
     /// <returns></returns>
     public async Task<bool> ResetSystemStringTemplates()
     {
-        var user = await _repUser.GetFirstAsync(u => u.Username == "ken");
+        var user = await _repUser.GetFirstAsync(u => u.Username == "fake_user");
         List<string> systemTemplateCode =
             [nameof(ChannelEnum.Lark), nameof(ChannelEnum.ComWechat), nameof(ChannelEnum.DingTalk), "Base"];
         await _repStringTemplate.DeleteAsync(t => systemTemplateCode.Contains(t.TemplateCode));

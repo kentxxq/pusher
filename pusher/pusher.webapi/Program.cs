@@ -124,12 +124,12 @@ try
                 .WithPreferredScheme("Basic") // Security scheme name from the OpenAPI document
                 .WithHttpBasicAuthentication(basic =>
                 {
-                    basic.Username = "your-username";
-                    basic.Password = "your-password";
+                    basic.Username = "fake_username";
+                    basic.Password = "fake_password";
                 });
 
             options.WithPreferredScheme("Bearer")
-                .WithHttpBearerAuthentication(bearer => { bearer.Token = "your-bearer-token"; });
+                .WithHttpBearerAuthentication(bearer => { bearer.Token = "fake_secret"; });
         });
     }
 
