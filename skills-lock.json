@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "design": {
+      "source": "kentxxq/public-files",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/design/SKILL.md",
+      "computedHash": "34978682a3c48987869161233a919c4436042dce49ec68854f7d738a9d361778"
+    },
+    "refactor": {
+      "source": "kentxxq/public-files",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/refactor/SKILL.md",
+      "computedHash": "6dfe3d44149c129f9ce4866ccea3379fbd4513c31b829e6287c6091f82cc5a4b"
+    },
+    "review": {
+      "source": "kentxxq/public-files",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/review/SKILL.md",
+      "computedHash": "7a11a65e8962d267358b7114e55b96fce0e4c84a88c9563e10fea4472b2d90ff"
+    },
+    "test": {
+      "source": "kentxxq/public-files",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/test/SKILL.md",
+      "computedHash": "702f1bf307865d8fea3a344574d87c3875ba218e3a69780e09ef0ef2d0b5c7e9"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "name": "pusher",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "prepare:types": "void prepare",
+    "typecheck": "void prepare && vue-tsc --noEmit",
+    "build": "vite build",
+    "start": "tsx scripts/start.ts",
+    "db:generate": "drizzle-kit generate --config drizzle.mysql.config.ts && drizzle-kit generate --config drizzle.sqlite.config.ts",
+    "db:migrate": "tsx scripts/database.ts migrate",
+    "db:baseline": "tsx scripts/database.ts baseline",
+    "db:check": "tsx scripts/check-migrations.ts",
+    "test": "vitest run",
+    "docs:dev": "vitepress dev docs/docs-website",
+    "docs:build": "vitepress build docs/docs-website"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "@nuxt/ui": "^4.12.0",
+    "@void/vue": "1.1.12",
+    "better-sqlite3": "12.4.1",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.4",
+    "echarts": "^5.6.0",
+    "handlebars": "^4.7.8",
+    "hono": "^4.13.13",
+    "jose": "^6.1.0",
+    "jsonc-parser": "^3.3.1",
+    "jsonpath-rfc9535": "^1.3.0",
+    "mysql2": "^3.24.6",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.10",
+    "tailwindcss": "^4.1.0",
+    "undici": "^7.16.0",
+    "void": "1.1.12",
+    "vue": "^3.5.22",
+    "vue-echarts": "^7.0.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "@types/nodemailer": "^7.0.0",
+    "drizzle-kit": "^0.31.11",
+    "happy-dom": "^21.0.4",
+    "medium-zoom": "^1.1.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0",
+    "vitepress": "^1.6.4",
+    "vitest": "^4.0.0",
+    "vue-tsc": "^3.1.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "workerd",
+      "@parcel/watcher"
+    ],
+    "overrides": {
+      "better-sqlite3": "12.4.1"
+    }
+  }
+}

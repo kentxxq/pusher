@@ -1,0 +1,8 @@
+node_modules
+dist
+cache
+.DS_Store
+.idea
+.temp
+.vite_opt_cache
+.vscode

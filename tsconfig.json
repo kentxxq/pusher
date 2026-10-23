@@ -1,0 +1,16 @@
+{
+  "extends": "./.void/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node", "vite/client"]
+  },
+  "include": ["pages/**/*.ts", "pages/**/*.vue", "components/**/*.vue", "types/**/*.d.ts", "routes/**/*.ts", "server/**/*.ts", "shared/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "middleware/**/*.ts", "*.config.ts", ".void/**/*.d.ts"],
+  "exclude": ["debug", "docs", "node_modules", "dist"]
+}
