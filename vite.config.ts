@@ -12,5 +12,6 @@ const nodePlugins = voidPlugin().filter(plugin => plugin.name !== 'void:env-sche
 
 export default defineConfig({
   server: { host: process.env.HOST || '127.0.0.1', port: Number(process.env.PORT || 3000), strictPort: true },
+  ssr: { noExternal: ['@nuxt/ui'] },
   plugins: [nuxtUiCompatibility, nodePlugins, voidVue(), ui({ dts: false, autoImport: false, router: false, colorMode: false, ui: { colors: uiColors } })],
 });

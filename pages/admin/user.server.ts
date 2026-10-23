@@ -5,7 +5,13 @@ import { requireAdmin } from '../../server/services/auth';
 
 export const loader = defineHandler(async c => {
   await perform(async () => requireAdmin(actor(c)));
-  return { users: await perform(() => services().users.list(actor(c), pageNumber(c))), csrf: c.get('shared').csrf };
+  const search = c.req.query('search') || '';
+  const page = pageNumber(c);
+  return {
+    users: await perform(() => services().users.list(actor(c), page, search)),
+    search,
+    csrf: c.get('shared').csrf
+  };
 });
 export type Props = InferProps<typeof loader>;
 export const actions = {

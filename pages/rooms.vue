@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { Form, Link, useForm, useRouter } from '@void/vue';
+import { useToast } from '@nuxt/ui/composables/useToast';
+import ConfirmModal from '../components/ConfirmModal.vue';
 import { listUrl } from '../shared/ui-navigation';
 import { actionErrorMessage } from '../shared/action-error';
 import type { TableColumn } from '@nuxt/ui';
@@ -80,13 +82,44 @@ const sendModalOpen = ref(false);
 // 当前操作选中的房间
 const activeRoom = ref<Props['list']['items'][number] | null>(null);
 
-// Toast 提示
-const toastMessage = ref('');
-let toastTimer: any = null;
-function showToast(msg: string) {
-  toastMessage.value = msg;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toastMessage.value = ''; }, 2600);
+// Nuxt UI Toast
+const toast = useToast();
+function showToast(msg: string, color: 'success' | 'error' | 'primary' = 'success') {
+  toast.add({
+    title: msg,
+    color,
+    icon: color === 'error' ? 'i-lucide-alert-circle' : 'i-lucide-check-circle-2',
+  });
+}
+
+// 确认操作弹窗状态 (Nuxt UI ConfirmModal)
+const confirmState = ref<{
+  open: boolean;
+  title: string;
+  description: string;
+  confirmText: string;
+  color: 'error' | 'warning' | 'primary';
+  icon: string;
+  loading: boolean;
+  action: () => Promise<void> | void;
+}>({
+  open: false,
+  title: '',
+  description: '',
+  confirmText: '确认',
+  color: 'error',
+  icon: 'i-lucide-alert-triangle',
+  loading: false,
+  action: () => {}
+});
+
+async function handleConfirm() {
+  confirmState.value.loading = true;
+  try {
+    await confirmState.value.action();
+  } finally {
+    confirmState.value.loading = false;
+  }
 }
 
 // 复制推送地址并触发 Toast
@@ -151,16 +184,26 @@ async function saveRoom() {
   }
 }
 
-// 删除房间
-async function removeRoom(id: number, name: string) {
-  if (confirm(`确认删除房间【${name}】及其所有消息记录？此操作不可恢复。`)) {
-    deleteForm.data.id = id;
-    deleteForm.data.csrf = props.csrf;
-    await deleteForm.post();
-    if (deleteForm.wasSuccessful) {
-      showToast(`房间【${name}】已成功删除`);
+// 删除房间（使用 Nuxt UI 弹窗）
+function removeRoom(id: number, name: string) {
+  confirmState.value = {
+    open: true,
+    title: '删除房间',
+    description: `确认删除房间【${name}】及其所有消息记录？此操作不可恢复。`,
+    confirmText: '确认删除',
+    color: 'error',
+    icon: 'i-lucide-trash-2',
+    loading: false,
+    action: async () => {
+      deleteForm.data.id = id;
+      deleteForm.data.csrf = props.csrf;
+      await deleteForm.post();
+      if (deleteForm.wasSuccessful) {
+        showToast(`房间【${name}】已成功删除`);
+        confirmState.value.open = false;
+      }
     }
-  }
+  };
 }
 
 // 关联管道弹窗
@@ -218,23 +261,92 @@ async function sendOneClickTest(room: Props['list']['items'][number]) {
   }
 }
 
-// 清除密钥
-async function clearKey(roomId: number, roomName: string) {
-  if (confirm(`清除房间【${roomName}】的密钥后，无需密钥即可推送。确认清除？`)) {
-    clearKeyForm.data.id = roomId;
-    clearKeyForm.data.csrf = props.csrf;
-    await clearKeyForm.post();
-    if (clearKeyForm.wasSuccessful) {
-      showToast('房间密钥已清除');
+// 清除密钥（使用 Nuxt UI 弹窗）
+function clearKey(roomId: number, roomName: string) {
+  confirmState.value = {
+    open: true,
+    title: '清除房间密钥',
+    description: `清除房间【${roomName}】的密钥后，无需密钥即可推送。确认清除？`,
+    confirmText: '确认清除',
+    color: 'warning',
+    icon: 'i-lucide-key-round',
+    loading: false,
+    action: async () => {
+      clearKeyForm.data.id = roomId;
+      clearKeyForm.data.csrf = props.csrf;
+      await clearKeyForm.post();
+      if (clearKeyForm.wasSuccessful) {
+        showToast('房间密钥已清除');
+        confirmState.value.open = false;
+      }
     }
+  };
+}
+
+// 消息记录弹窗与分页
+const historyLoading = ref(false);
+const historyData = ref<{
+  items: Array<{ id: number; content: string; recordedAt: string }>;
+  total: number;
+  page: number;
+  pageSize: number;
+}>({ items: [], total: 0, page: 1, pageSize: 20 });
+
+const totalHistoryPages = computed(() => Math.max(1, Math.ceil((historyData.value.total || 0) / (historyData.value.pageSize || 20))));
+
+async function loadRoomHistory(roomId: number, page = 1) {
+  historyLoading.value = true;
+  try {
+    const res = await fetch(`/rooms/${roomId}?page=${page}`, {
+      headers: { 'X-VoidPages': 'true' }
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const h = json.props?.history || json.history;
+      if (h) {
+        historyData.value = {
+          items: h.items || [],
+          total: h.total || 0,
+          page: h.page || 1,
+          pageSize: h.pageSize || 20
+        };
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    historyLoading.value = false;
   }
 }
 
-// 消息记录弹窗
 function openHistoryDialog(room: Props['list']['items'][number]) {
   activeRoom.value = room;
+  const cached = props.recentMessages[room.id] || [];
+  historyData.value = {
+    items: [...cached],
+    total: cached.length,
+    page: 1,
+    pageSize: 20
+  };
   historyModalOpen.value = true;
+  loadRoomHistory(room.id, 1);
 }
+
+function changeHistoryPage(delta: number) {
+  if (!activeRoom.value) return;
+  const targetPage = historyData.value.page + delta;
+  if (targetPage < 1 || targetPage > totalHistoryPages.value) return;
+  loadRoomHistory(activeRoom.value.id, targetPage);
+}
+
+// 表格列定义（历史弹窗用）
+type HistoryRow = { id: number; content: string; recordedAt: string };
+const historyColumns: TableColumn<HistoryRow>[] = [
+  { accessorKey: 'id', header: 'ID' },
+  { accessorKey: 'recordedAt', header: '推送时间' },
+  { accessorKey: 'content', header: '消息内容' },
+  { id: 'actions', header: '操作' }
+];
 
 // 表格列定义
 type Row = Props['list']['items'][number];
@@ -278,41 +390,43 @@ const columns: TableColumn<Row>[] = [
               刷新
             </UButton>
           </form>
+          <!-- 翻页控制（按钮无文字，位于页码左侧） -->
           <div class="flex items-center gap-3 text-xs text-muted whitespace-nowrap">
-            <span>共 <span class="font-semibold text-highlighted">{{ list.total }}</span> 个房间 · 第 <span class="font-semibold text-highlighted">{{ list.page }}</span> 页</span>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1">
               <Link
                 v-if="list.page > 1"
                 :href="listUrl('/rooms', list.page - 1, search)"
-                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
+                title="上一页"
               >
                 <UIcon name="i-lucide-chevron-left" class="size-3.5" />
-                <span>上一页</span>
               </Link>
               <span
                 v-else
-                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
+                title="上一页（已是第一页）"
               >
                 <UIcon name="i-lucide-chevron-left" class="size-3.5" />
-                <span>上一页</span>
               </span>
 
               <Link
                 v-if="list.page * list.pageSize < list.total"
                 :href="listUrl('/rooms', list.page + 1, search)"
-                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
+                title="下一页"
               >
-                <span>下一页</span>
                 <UIcon name="i-lucide-chevron-right" class="size-3.5" />
               </Link>
               <span
                 v-else
-                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
+                title="下一页（已是最后一页）"
               >
-                <span>下一页</span>
                 <UIcon name="i-lucide-chevron-right" class="size-3.5" />
               </span>
             </div>
+
+            <span>共 <strong class="font-semibold text-highlighted">{{ list.total }}</strong> 个房间 · 第 <strong class="font-semibold text-highlighted">{{ list.page }}</strong> 页</span>
           </div>
         </div>
         <p v-if="deleteForm.error" class="whitespace-pre-wrap text-sm text-error mt-2">{{ actionErrorMessage(deleteForm.error) }}</p>
@@ -503,7 +617,7 @@ const columns: TableColumn<Row>[] = [
       <template #body>
         <Form :form="{ ...sendForm, post: submitSend }" :render-error="actionErrorMessage" class="grid gap-4">
           <UFormField label="消息内容" :error="sendForm.errors.content">
-            <UTextarea v-model="sendForm.data.content" rows="4" class="w-full" />
+            <UTextarea v-model="sendForm.data.content" :rows="4" class="w-full" />
           </UFormField>
           <UFormField label="模板代码（可选）">
             <UInput v-model="sendForm.data.templateCode" placeholder="留空使用原始正文" class="w-full" />
@@ -516,51 +630,139 @@ const columns: TableColumn<Row>[] = [
       </template>
     </UModal>
 
-    <!-- 4. 消息记录弹窗 -->
+    <!-- 4. 消息记录弹窗（经典紧凑表格风，右上角整合总数与翻页） -->
     <UModal
       v-model:open="historyModalOpen"
-      :title="activeRoom ? `消息记录 - ${activeRoom.name}` : '消息记录'"
-      :ui="{ content: 'max-w-2xl' }"
+      :ui="{
+        content: 'w-[calc(100vw-2rem)] sm:max-w-4xl',
+        header: 'flex items-center justify-between',
+        wrapper: 'flex-1'
+      }"
     >
+      <template #title>
+        <div class="flex items-center gap-2">
+          <span>{{ activeRoom ? `消息记录 - ${activeRoom.name}` : '消息记录' }}</span>
+          <UBadge v-if="activeRoom?.code" variant="subtle" class="font-mono text-xs">{{ activeRoom.code }}</UBadge>
+        </div>
+      </template>
+
+      <!-- 右上角翻页控制与总条数（靠右侧关闭按钮对齐，翻页在左，页码在右缓冲防误触） -->
+      <template #actions>
+        <div class="flex items-center gap-2.5 text-xs ml-auto mr-8">
+          <UIcon v-if="historyLoading" name="i-lucide-loader-2" class="size-3.5 animate-spin text-primary" />
+          <!-- 翻页按钮（位于页码左侧） -->
+          <div class="flex items-center gap-1">
+            <UButton
+              size="xs"
+              variant="outline"
+              color="neutral"
+              icon="i-lucide-chevron-left"
+              title="上一页"
+              :disabled="historyData.page <= 1 || historyLoading"
+              @click="changeHistoryPage(-1)"
+            />
+            <UButton
+              size="xs"
+              variant="outline"
+              color="neutral"
+              icon="i-lucide-chevron-right"
+              title="下一页"
+              :disabled="historyData.page >= totalHistoryPages || historyLoading"
+              @click="changeHistoryPage(1)"
+            />
+          </div>
+
+          <!-- 页码与总条数信息（位于翻页按钮右侧、关闭按钮左侧） -->
+          <span class="text-muted whitespace-nowrap">
+            共 <strong class="text-highlighted font-semibold">{{ historyData.total }}</strong> 条 · 第 <strong class="text-highlighted font-semibold">{{ historyData.page }} / {{ totalHistoryPages }}</strong> 页
+          </span>
+        </div>
+      </template>
+
       <template #body>
         <div class="space-y-3">
-          <div v-if="activeRoom && props.recentMessages[activeRoom.id]?.length" class="divide-y divide-default max-h-96 overflow-y-auto">
-            <div v-for="m in props.recentMessages[activeRoom.id]" :key="m.id" class="py-2.5 space-y-1">
-              <div class="flex items-center justify-between text-xs text-muted">
-                <span class="font-mono">ID: #{{ m.id }}</span>
-                <span>{{ m.recordedAt }}</span>
-              </div>
-              <div class="text-xs text-highlighted whitespace-pre-wrap bg-muted/20 p-2.5 rounded-md font-sans">
-                {{ m.content }}
-              </div>
+          <!-- 消息内容展示区 (经典紧凑表格) -->
+          <div class="min-h-72 max-h-[60vh] overflow-y-auto pr-0.5">
+            <!-- 加载骨架占位 -->
+            <div v-if="historyLoading && !historyData.items.length" class="text-center py-20 text-xs text-muted flex flex-col items-center gap-2">
+              <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-primary" />
+              <span>正在拉取消息历史...</span>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-else-if="!historyData.items.length" class="text-center py-20 text-xs text-muted border border-dashed border-default rounded-xl">
+              该房间暂无任何消息记录
+            </div>
+
+            <!-- 经典紧凑二维表格 -->
+            <div v-else class="rounded-xl border border-default overflow-hidden">
+              <UTable
+                :data="historyData.items"
+                :columns="historyColumns"
+                class="w-full"
+                :ui="{
+                  base: 'w-full min-w-full table-auto',
+                  th: 'py-2.5 px-3 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
+                  td: 'py-2.5 px-3 text-xs border-b border-default'
+                }"
+              >
+                <template #id-cell="{ row }">
+                  <span class="font-mono text-xs font-semibold text-muted">#{{ row.original.id }}</span>
+                </template>
+                <template #recordedAt-cell="{ row }">
+                  <span class="font-mono text-xs text-muted whitespace-nowrap">{{ row.original.recordedAt }}</span>
+                </template>
+                <template #content-cell="{ row }">
+                  <div class="text-xs whitespace-pre-wrap font-sans bg-muted/15 p-2 rounded-md break-all max-h-28 overflow-y-auto text-highlighted">
+                    {{ row.original.content }}
+                  </div>
+                </template>
+                <template #actions-header>
+                  <div class="w-full text-right pr-2">操作</div>
+                </template>
+                <template #actions-cell="{ row }">
+                  <div class="flex items-center justify-end">
+                    <UButton
+                      size="xs"
+                      variant="ghost"
+                      color="neutral"
+                      icon="i-lucide-copy"
+                      title="复制消息内容"
+                      @click="fallbackCopy(row.original.content) && showToast('消息内容已复制！')"
+                    >
+                      复制
+                    </UButton>
+                  </div>
+                </template>
+              </UTable>
             </div>
           </div>
-          <div v-else class="text-center py-10 text-xs text-muted">
-            暂无消息记录
-          </div>
-          <div class="flex justify-end items-center pt-2">
-            <UButton color="neutral" variant="ghost" size="xs" @click="historyModalOpen = false">关闭</UButton>
+
+          <!-- 底部关闭按钮栏 -->
+          <div class="flex items-center justify-end pt-2 border-t border-default">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              @click="historyModalOpen = false"
+            >
+              关闭
+            </UButton>
           </div>
         </div>
       </template>
     </UModal>
 
-    <!-- 顶层 Toast 消息提示通知（复制 URL、操作反馈） -->
-    <transition
-      enter-active-class="transform ease-out duration-250 transition"
-      enter-from-class="-translate-y-4 opacity-0"
-      enter-to-class="translate-y-0 opacity-100"
-      leave-active-class="transition ease-in duration-200"
-      leave-from-class="opacity-100"
-      leave-to-class="-translate-y-4 opacity-0"
-    >
-      <div
-        v-if="toastMessage"
-        class="fixed top-6 right-6 z-50 flex items-center gap-2.5 rounded-xl bg-neutral-900/95 text-white dark:bg-white dark:text-neutral-950 px-4 py-3 shadow-2xl backdrop-blur-md text-xs font-medium border border-white/10 dark:border-neutral-900/10 pointer-events-none"
-      >
-        <UIcon name="i-lucide-check-circle-2" class="size-4.5 text-green-500 shrink-0" />
-        <span>{{ toastMessage }}</span>
-      </div>
-    </transition>
+    <!-- 5. 危险/确认操作弹窗（Nuxt UI ConfirmModal） -->
+    <ConfirmModal
+      v-model:open="confirmState.open"
+      :title="confirmState.title"
+      :description="confirmState.description"
+      :confirm-text="confirmState.confirmText"
+      :color="confirmState.color"
+      :icon="confirmState.icon"
+      :loading="confirmState.loading"
+      @confirm="handleConfirm"
+    />
   </div>
 </template>

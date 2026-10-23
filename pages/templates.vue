@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, reactive, ref, shallowRef } from 'vue';
-import { Form, useForm } from '@void/vue';
-import SearchForm from '../components/SearchForm.vue';
-import Pagination from '../components/Pagination.vue';
+import { computed, nextTick, reactive, ref, shallowRef, watch } from 'vue';
+import { Form, Link, useForm, useRouter } from '@void/vue';
+import { useToast } from '@nuxt/ui/composables/useToast';
+import ConfirmModal from '../components/ConfirmModal.vue';
+import { listUrl } from '../shared/ui-navigation';
 import { actionErrorMessage } from '../shared/action-error';
 import { templateValueSchema } from '../shared/validation';
 import type { TemplateObject } from '../shared/domain';
@@ -10,6 +11,103 @@ import type { TableColumn } from '@nuxt/ui';
 import type { Props } from './templates.server';
 
 const props = defineProps<Props>();
+const router = useRouter();
+
+// 搜索与刷新逻辑
+const searchValue = ref(props.search);
+watch(() => props.search, (s) => {
+  if (typeof document !== 'undefined') {
+    const inputEl = document.querySelector('input[name="search"]') as HTMLInputElement | null;
+    if (document.activeElement === inputEl) return;
+  }
+  searchValue.value = s;
+});
+
+let searchDebounceTimer: any = null;
+function onSearchInput() {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    triggerSearch(searchValue.value);
+  }, 350);
+}
+
+async function triggerSearch(keyword: string) {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  let isFocused = false;
+  let selectionStart: number | null = null;
+  let selectionEnd: number | null = null;
+
+  if (typeof document !== 'undefined') {
+    const inputEl = document.querySelector('input[name="search"]') as HTMLInputElement | null;
+    isFocused = document.activeElement === inputEl;
+    selectionStart = inputEl?.selectionStart ?? null;
+    selectionEnd = inputEl?.selectionEnd ?? null;
+  }
+
+  await (router as any).visit(listUrl('/templates', 1, keyword), { preserveState: true, replace: true });
+
+  if (isFocused && typeof document !== 'undefined') {
+    nextTick(() => {
+      const el = document.querySelector('input[name="search"]') as HTMLInputElement | null;
+      if (el) {
+        el.focus();
+        if (selectionStart !== null && selectionEnd !== null) {
+          try {
+            el.setSelectionRange(selectionStart, selectionEnd);
+          } catch {}
+        }
+      }
+    });
+  }
+}
+
+function refreshTemplates() {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchValue.value = '';
+  (router as any).visit(listUrl('/templates', 1, ''), { preserveState: true, replace: true });
+  showToast('已清空搜索并刷新数据');
+}
+
+// Nuxt UI Toast
+const toast = useToast();
+function showToast(msg: string, color: 'success' | 'error' | 'primary' = 'success') {
+  toast.add({
+    title: msg,
+    color,
+    icon: color === 'error' ? 'i-lucide-alert-circle' : 'i-lucide-check-circle-2',
+  });
+}
+
+// 统一确认弹窗状态
+const confirmState = ref<{
+  open: boolean;
+  title: string;
+  description: string;
+  confirmText: string;
+  color: 'error' | 'warning' | 'primary';
+  icon: string;
+  loading: boolean;
+  action: () => Promise<void> | void;
+}>({
+  open: false,
+  title: '',
+  description: '',
+  confirmText: '确认',
+  color: 'error',
+  icon: 'i-lucide-alert-triangle',
+  loading: false,
+  action: () => {}
+});
+
+async function handleConfirm() {
+  confirmState.value.loading = true;
+  try {
+    await confirmState.value.action();
+  } finally {
+    confirmState.value.loading = false;
+  }
+}
+
 const open = ref(false);
 const draft = reactive<TemplateObject>({ Variables: [], TemplateText: '' });
 const errors = ref<Record<string, string>>({});
@@ -45,7 +143,10 @@ async function save() {
   if (busy.value || !validate()) return;
   form.data.value = JSON.stringify(draft); form.data.csrf = props.csrf;
   await form.post();
-  if (form.wasSuccessful) open.value = false;
+  if (form.wasSuccessful) {
+    showToast(form.data.id ? '模板已更新' : '新建模板成功');
+    open.value = false;
+  }
 }
 
 async function testPreview() {
@@ -56,27 +157,152 @@ async function testPreview() {
   if (preview.wasSuccessful && props.preview) { lastPreview.value = props.preview; lastSignature.value = requestedSignature; }
 }
 
-async function remove(id: number) { if (confirm('删除这个模板？')) { deletion.data.id = id; await deletion.post(); } }
+function remove(id: number) {
+  confirmState.value = {
+    open: true,
+    title: '确认删除模板',
+    description: '此操作将永久删除该消息模板，删除后不可恢复。确认继续？',
+    confirmText: '删除模板',
+    color: 'error',
+    icon: 'i-lucide-trash-2',
+    loading: false,
+    action: async () => {
+      deletion.data.id = id;
+      deletion.data.csrf = props.csrf;
+      await deletion.post();
+      if (deletion.wasSuccessful) {
+        showToast('模板已成功删除');
+        confirmState.value.open = false;
+      }
+    }
+  };
+}
+
 type Row = Props['list']['items'][number];
-const columns: TableColumn<Row>[] = [{ accessorKey: 'name', header: '名称' }, { accessorKey: 'code', header: '模板代码' }, { id: 'actions', header: '操作' }];
+const columns: TableColumn<Row>[] = [
+  { accessorKey: 'name', header: '名称' },
+  { accessorKey: 'code', header: '模板代码' },
+  { id: 'actions', header: '操作' }
+];
 const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路径非法' };
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center justify-between gap-4">
-    <h1 class="text-2xl font-semibold text-highlighted">字符串模板</h1>
-    <UButton @click="edit()">新建模板</UButton>
-  </div>
+  <div class="w-full space-y-4">
+    <!-- 顶部标题栏 -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="text-2xl font-semibold text-highlighted">字符串模板</h1>
+      <UButton icon="i-lucide-plus" @click="edit()">新建模板</UButton>
+    </div>
 
-  <UCard>
-    <SearchForm path="/templates" :search="search" placeholder="搜索模板" />
-    <UAlert v-if="deletion.error" color="error" :description="actionErrorMessage(deletion.error)" />
-    <UTable :data="list.items" :columns="columns" empty="暂无模板" :sorting-options="{ enableSorting: false }" :ui="{ td: 'max-w-sm whitespace-normal wrap-anywhere' }">
-      <template #code-cell="{ row }"><span class="font-mono text-xs wrap-anywhere">{{ row.original.code }}</span></template>
-      <template #actions-cell="{ row }"><div class="flex flex-wrap items-center gap-2"><UButton variant="ghost" @click="edit(row.original)">编辑</UButton><UButton color="error" variant="ghost" @click="remove(row.original.id)">删除</UButton></div></template>
-    </UTable>
-    <Pagination v-bind="list" path="/templates" :search="search" />
-  </UCard>
+    <!-- 主表格卡片：撑满全宽 -->
+    <UCard class="w-full overflow-hidden" :ui="{ body: 'p-0 sm:p-0' }">
+      <div class="p-4 sm:p-5 border-b border-default">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <form method="get" action="/templates" class="flex items-center gap-2 m-0" @submit.prevent="triggerSearch(searchValue)">
+            <UInput
+              v-model="searchValue"
+              name="search"
+              placeholder="搜索模板"
+              aria-label="搜索模板"
+              class="w-56 sm:w-64"
+              @input="onSearchInput"
+            />
+            <UButton
+              type="button"
+              variant="outline"
+              color="neutral"
+              icon="i-lucide-refresh-cw"
+              title="刷新列表并清空搜索"
+              @click="refreshTemplates"
+            >
+              刷新
+            </UButton>
+          </form>
+
+          <!-- 翻页控制（按钮无文字，位于页码左侧） -->
+          <div class="flex items-center gap-3 text-xs text-muted whitespace-nowrap">
+            <div class="flex items-center gap-1">
+              <Link
+                v-if="list.page > 1"
+                :href="listUrl('/templates', list.page - 1, search)"
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
+                title="上一页"
+              >
+                <UIcon name="i-lucide-chevron-left" class="size-3.5" />
+              </Link>
+              <span
+                v-else
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
+                title="上一页（已是第一页）"
+              >
+                <UIcon name="i-lucide-chevron-left" class="size-3.5" />
+              </span>
+
+              <Link
+                v-if="list.page * list.pageSize < list.total"
+                :href="listUrl('/templates', list.page + 1, search)"
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
+                title="下一页"
+              >
+                <UIcon name="i-lucide-chevron-right" class="size-3.5" />
+              </Link>
+              <span
+                v-else
+                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
+                title="下一页（已是最后一页）"
+              >
+                <UIcon name="i-lucide-chevron-right" class="size-3.5" />
+              </span>
+            </div>
+
+            <span>共 <strong class="font-semibold text-highlighted">{{ list.total }}</strong> 个模板 · 第 <strong class="font-semibold text-highlighted">{{ list.page }}</strong> 页</span>
+          </div>
+        </div>
+        <UAlert v-if="deletion.error" color="error" :description="actionErrorMessage(deletion.error)" class="mt-2" />
+      </div>
+
+      <!-- 表格全宽展示 -->
+      <div class="w-full overflow-x-auto">
+        <UTable
+          :data="list.items"
+          :columns="columns"
+          empty="暂无模板"
+          :sorting-options="{ enableSorting: false }"
+          class="w-full"
+          :ui="{
+            base: 'w-full min-w-full table-auto',
+            th: 'py-3.5 px-4 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
+            td: 'py-3.5 px-4 text-sm border-b border-default'
+          }"
+        >
+          <template #name-cell="{ row }">
+            <span class="font-medium text-highlighted">{{ row.original.name }}</span>
+          </template>
+
+          <template #code-cell="{ row }">
+            <span class="font-mono text-xs text-muted">{{ row.original.code }}</span>
+          </template>
+
+          <!-- 操作列表头：靠右对齐 -->
+          <template #actions-header>
+            <div class="w-full text-right pr-2 whitespace-nowrap">操作</div>
+          </template>
+
+          <!-- 操作按钮栏：靠右定格对齐 -->
+          <template #actions-cell="{ row }">
+            <div class="flex items-center justify-end gap-1.5 flex-nowrap whitespace-nowrap pl-6 ml-auto shrink-0">
+              <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-pencil" @click="edit(row.original)">
+                编辑
+              </UButton>
+              <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" @click="remove(row.original.id)">
+                删除
+              </UButton>
+            </div>
+          </template>
+        </UTable>
+      </div>
+    </UCard>
 
   <UModal
     v-model:open="open"
@@ -262,4 +488,17 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
       </Form>
     </template>
   </UModal>
+
+  <!-- 统一确认操作弹窗 -->
+  <ConfirmModal
+    v-model:open="confirmState.open"
+    :title="confirmState.title"
+    :description="confirmState.description"
+    :confirm-text="confirmState.confirmText"
+    :color="confirmState.color"
+    :icon="confirmState.icon"
+    :loading="confirmState.loading"
+    @confirm="handleConfirm"
+  />
+</div>
 </template>

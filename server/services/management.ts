@@ -71,6 +71,12 @@ export class ManagementService {
     for (const row of await this.repo.all('relations', { roomId })) await this.repo.remove('relations', row.id);
     for (const channelId of new Set(ids)) await this.repo.insert('relations', { roomId, channelId });
   }
+  async linkRooms(actor: Actor, channelId: number, ids: number[]) {
+    await this.owned('channels', actor, channelId);
+    for (const id of ids) await this.owned('rooms', actor, id);
+    for (const row of await this.repo.all('relations', { channelId })) await this.repo.remove('relations', row.id);
+    for (const roomId of new Set(ids)) await this.repo.insert('relations', { roomId, channelId });
+  }
   async roomDetail(actor: Actor, id: number, page: number) {
     const room = await this.owned('rooms', actor, id);
     const relations = await this.repo.all('relations', { roomId: id });

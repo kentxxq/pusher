@@ -17,7 +17,13 @@ export class UserService {
     } else await this.repo.update('users', user.id, { lastForgetTime: timestamp() });
     await this.mail(username, 'pusher-用户注册', `欢迎注册pusher,你的用户名是${username},你的密码是${user.password}`);
   }
-  async list(actor: Actor, page: number) { requireAdmin(actor); return paginate((await this.repo.all('users')).map(({ password, ...user }) => user), page); }
+  async list(actor: Actor, page: number, search = '') {
+    requireAdmin(actor);
+    const all = (await this.repo.all('users')).map(({ password, ...user }) => user);
+    const trimmed = search.trim().toLowerCase();
+    const filtered = trimmed ? all.filter(u => u.username.toLowerCase().includes(trimmed)) : all;
+    return paginate(filtered, page);
+  }
   async create(actor: Actor, input: { username: string; password: string; role: number }) {
     requireAdmin(actor);
     if (await this.repo.one('users', { username: input.username })) throw new BusinessError('用户名已存在', 409);

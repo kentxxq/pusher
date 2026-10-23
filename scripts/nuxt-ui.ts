@@ -18,6 +18,13 @@ const mainCss = normalizePath(fileURLToPath(new URL('../styles/main.css', import
 export const nuxtUiCompatibility: Plugin = {
   name: 'pusher:nuxt-ui-compatibility',
   enforce: 'pre',
+  config() {
+    return {
+      ssr: {
+        noExternal: ['@nuxt/ui'],
+      },
+    };
+  },
   // Void 开发 CSS 遍历为虚拟模块添加空字符，Nuxt UI 使用无前缀 ID。
   resolveId(id) { if (id.startsWith('\0virtual:nuxt-ui-')) return id.slice(1); },
   // 当前 Void Vue 渲染器未输出 Unhead 样式，首屏必须随静态资源提供主题变量。
