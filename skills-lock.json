@@ -7,6 +7,13 @@
       "skillPath": ".agents/skills/design/SKILL.md",
       "computedHash": "34978682a3c48987869161233a919c4436042dce49ec68854f7d738a9d361778"
     },
+    "nuxt-ui": {
+      "source": "nuxt/ui",
+      "ref": "v4",
+      "sourceType": "github",
+      "skillPath": "skills/nuxt-ui/SKILL.md",
+      "computedHash": "1f0fb5fab3b5c047f52fcdad69be3a92f5f81104b93f3cd784696191443e62ae"
+    },
     "refactor": {
       "source": "kentxxq/public-files",
       "sourceType": "github",

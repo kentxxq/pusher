@@ -7,5 +7,4 @@ export type Props = InferProps<typeof loader>;
 export const actions = {
   test: defineHandler.withValidator({ body: withCsrf(idSchema) })(async (c) => { await perform(() => services().management.testChannel(actor(c), routeId(c))); }),
   clearProxy: defineHandler.withValidator({ body: withCsrf(idSchema) })(async (c) => { await perform(() => services().management.clearChannelSecret(actor(c), routeId(c), 'proxy')); }),
-  clearConfig: defineHandler.withValidator({ body: withCsrf(idSchema) })(async (c) => { await perform(() => services().management.clearChannelSecret(actor(c), routeId(c), 'config')); }),
 };

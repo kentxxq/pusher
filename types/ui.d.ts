@@ -14,6 +14,7 @@ declare module 'vue' {
     UDashboardSidebarCollapse: typeof import('@nuxt/ui/components/DashboardSidebarCollapse.vue')['default'];
     UFormField: typeof import('@nuxt/ui/components/FormField.vue')['default'];
     UInput: typeof import('@nuxt/ui/components/Input.vue')['default'];
+    UListbox: typeof import('@nuxt/ui/components/Listbox.vue')['default'];
     USelect: typeof import('@nuxt/ui/components/Select.vue')['default'];
     UTextarea: typeof import('@nuxt/ui/components/Textarea.vue')['default'];
   }
