@@ -24,7 +24,7 @@ watch(() => mail.wasSuccessful, successful => {
 </script>
 <template>
   <UCard class="w-full max-w-md">
-    <template #header><h1 class="text-2xl font-semibold text-highlighted">Pusher</h1><p class="text-muted">让消息抵达你需要的地方。</p></template>
+    <template #header><h1 class="text-2xl font-semibold text-highlighted">Pusher</h1></template>
     <Form v-if="!mailVisible" :form="login" :render-error="actionErrorMessage" class="grid gap-4">
       <UFormField label="邮箱 / 用户名" :error="login.errors.username"><UInput v-model="login.data.username" autocomplete="username" class="w-full" /></UFormField>
       <UFormField label="密码" :error="login.errors.password"><UInput v-model="login.data.password" type="password" autocomplete="current-password" class="w-full" /></UFormField>

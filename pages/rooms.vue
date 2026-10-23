@@ -42,10 +42,7 @@ const columns: TableColumn<Row>[] = [
 </script>
 <template>
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <h1 class="text-2xl font-semibold text-highlighted">房间</h1>
-      <p class="text-muted">为不同来源组织消息，关联需要接收消息的管道。</p>
-    </div>
+    <h1 class="text-2xl font-semibold text-highlighted">房间</h1>
     <UButton @click="edit()">新建房间</UButton>
   </div>
   <UCard>
@@ -60,7 +57,7 @@ const columns: TableColumn<Row>[] = [
     <Pagination v-bind="list" path="/rooms" :search="search" />
   </UCard>
 
-  <UModal v-model:open="open" :title="form.data.id ? '编辑房间' : '新建房间'" description="为不同来源组织消息，关联需要接收消息的管道。" :dismissible="!form.pending" :close="!form.pending">
+  <UModal v-model:open="open" :title="form.data.id ? '编辑房间' : '新建房间'" :dismissible="!form.pending" :close="!form.pending">
     <template #body>
       <Form :form="{ ...form, post: save }" :render-error="actionErrorMessage" class="grid gap-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -64,7 +64,7 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
 
 <template>
   <div class="flex flex-wrap items-center justify-between gap-4">
-    <div><h1 class="text-2xl font-semibold text-highlighted">字符串模板</h1><p class="text-muted">定义 JSONPath 变量，通过 Handlebars 渲染正文。</p></div>
+    <h1 class="text-2xl font-semibold text-highlighted">字符串模板</h1>
     <UButton @click="edit()">新建模板</UButton>
   </div>
 
@@ -81,7 +81,6 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
   <UModal
     v-model:open="open"
     :title="form.data.id ? '编辑模板' : '新建模板'"
-    description="编辑变量与正文，使用样例数据调试提取和渲染结果。"
     :dismissible="!busy"
     :close="!busy"
     :ui="{
@@ -109,10 +108,7 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
               <!-- 变量映射 -->
               <div class="pt-3 border-t border-default/70 space-y-3">
                 <div class="flex items-center justify-between">
-                  <div>
-                    <h3 class="font-semibold text-xs text-highlighted uppercase tracking-wide">变量映射 (JSONPath 提取)</h3>
-                    <p class="text-xs text-muted">从上游数据中提取字段，供下方模板正文引用</p>
-                  </div>
+                  <h3 class="font-semibold text-xs text-highlighted uppercase tracking-wide">变量映射 (JSONPath 提取)</h3>
                   <UButton type="button" size="xs" variant="outline" icon="i-lucide-plus" @click="draft.Variables.push({ VariableName: '', JsonPath: '' })">
                     添加变量
                   </UButton>
@@ -156,7 +152,7 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
                     />
                   </div>
                 </div>
-                <p v-else class="text-xs text-muted py-2 border border-dashed border-default rounded text-center">暂未添加变量，正文将直接作为固定文本渲染。</p>
+                <p v-else class="text-xs text-muted py-2 border border-dashed border-default rounded text-center">暂无变量</p>
               </div>
             </div>
 
@@ -168,7 +164,6 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
                   <span class="font-semibold text-xs text-highlighted">Handlebars 模板正文</span>
                   <UBadge size="xs" color="primary" variant="subtle">模板定义</UBadge>
                 </div>
-                <span v-pre class="text-xs text-muted">支持引用变量：{{ 变量名 }}</span>
               </div>
 
               <UFormField :error="errors.TemplateText || form.errors.value">
@@ -176,7 +171,7 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
                   v-model="draft.TemplateText"
                   name="templateText"
                   :rows="9"
-                  placeholder="在此输入模板正文，使用 {{ 变量名 }} 引用上方定义的变量..."
+                  placeholder="输入模板正文..."
                   class="w-full font-mono text-sm"
                 />
               </UFormField>
@@ -213,7 +208,6 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
 
               <UAlert v-if="preview.error" color="error" :description="actionErrorMessage(preview.error)" />
               <UAlert v-if="stale" color="warning" title="预览已过期，请重新运行测试" />
-              <p v-if="lastPreview?.inputMode === 'text'" role="status" class="text-xs text-muted">样例按普通文本处理，通过 $.content 提取；如果预期使用 JSON，请检查样例格式。</p>
             </div>
 
             <!-- 变量提取状态 -->
@@ -244,14 +238,13 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
                   <span class="font-semibold text-xs text-highlighted">最终渲染正文</span>
                   <UBadge size="xs" color="success" variant="subtle">预览效果</UBadge>
                 </div>
-                <span class="text-xs text-muted">由左侧模板替换生成</span>
               </div>
 
               <div v-if="lastPreview">
                 <pre aria-label="渲染正文" class="min-h-24 max-h-52 overflow-y-auto whitespace-pre-wrap rounded-lg bg-elevated/80 p-3 font-mono text-xs border border-default wrap-anywhere">{{ lastPreview.rendered || '（空字符串）' }}</pre>
               </div>
               <div v-else class="text-center py-7 text-xs text-muted border border-dashed border-default rounded-lg">
-                在左侧编写模板，点击上方「运行测试」在此预览渲染结果
+                暂无渲染结果
               </div>
             </div>
           </div>

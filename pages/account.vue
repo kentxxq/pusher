@@ -6,7 +6,12 @@ const props = defineProps<Props>();
 const form = useForm('/account?password', { oldPassword: '', newPassword: '', csrf: props.csrf });
 </script>
 <template>
-  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h1 class="text-2xl font-semibold text-highlighted">账号设置</h1><p class="text-muted">{{ user.username }}</p></div></div>
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-semibold text-highlighted">账号设置</h1>
+      <UBadge variant="subtle">{{ user.username }}</UBadge>
+    </div>
+  </div>
   <UCard class="w-full max-w-md"><template #header><h2 class="text-lg font-semibold text-highlighted">修改密码</h2></template>
     <Form :form="form" :render-error="actionErrorMessage" class="grid gap-4">
       <UFormField label="原密码" :error="form.errors.oldPassword"><UInput v-model="form.data.oldPassword" type="password" autocomplete="current-password" /></UFormField>

@@ -44,10 +44,7 @@ const columns: TableColumn<Row>[] = [
 </script>
 <template>
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <h1 class="text-2xl font-semibold text-highlighted">推送管道</h1>
-      <p class="text-muted">连接你的消息接收端。已有凭据不会回显，留空保留原值。</p>
-    </div>
+    <h1 class="text-2xl font-semibold text-highlighted">推送管道</h1>
     <UButton @click="edit()">新建管道</UButton>
   </div>
   <UCard>
@@ -62,7 +59,7 @@ const columns: TableColumn<Row>[] = [
     <Pagination v-bind="list" path="/channels" :search="search" />
   </UCard>
 
-  <UModal v-model:open="open" :title="form.data.id ? '编辑管道' : '新建管道'" description="配置推送管道连接信息。已有凭据不会回显，留空保留原值。" :dismissible="!form.pending" :close="!form.pending">
+  <UModal v-model:open="open" :title="form.data.id ? '编辑管道' : '新建管道'" :dismissible="!form.pending" :close="!form.pending">
     <template #body>
       <Form :form="{ ...form, post: save }" :render-error="actionErrorMessage" class="grid gap-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
