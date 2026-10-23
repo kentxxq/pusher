@@ -17,6 +17,13 @@ declare module 'vue' {
     UListbox: typeof import('@nuxt/ui/components/Listbox.vue')['default'];
     USelect: typeof import('@nuxt/ui/components/Select.vue')['default'];
     UTextarea: typeof import('@nuxt/ui/components/Textarea.vue')['default'];
+    UModal: typeof import('@nuxt/ui/components/Modal.vue')['default'];
+    USlideover: typeof import('@nuxt/ui/components/Slideover.vue')['default'];
+    UTabs: typeof import('@nuxt/ui/components/Tabs.vue')['default'];
+    UTable: typeof import('@nuxt/ui/components/Table.vue')['default'];
+    UAlert: typeof import('@nuxt/ui/components/Alert.vue')['default'];
+    UIcon: typeof import('@nuxt/ui/components/Icon.vue')['default'];
+    UAccordion: typeof import('@nuxt/ui/components/Accordion.vue')['default'];
   }
 }
 export {};
