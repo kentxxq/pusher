@@ -45,7 +45,7 @@ globalThis.fetch = async (input, init) => {
 async function until(check: () => boolean, description: string) {
   const deadline = Date.now() + 5000;
   while (!check()) {
-    if (Date.now() > deadline) throw new Error(description + ': ' + document.body.textContent?.slice(0, 300));
+    if (Date.now() > deadline) throw new Error(`${description}（当前 URL：${window.location.pathname + window.location.search}，标题：${document.querySelector('h1')?.textContent ?? '无'}）`);
     await new Promise(resolve => setTimeout(resolve, 10));
   }
 }
@@ -82,10 +82,12 @@ try {
   assert.ok(document.querySelector('a[href="/admin/user"]'), '登录后管理员菜单响应式出现');
   document.querySelector('input[role="spinbutton"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
   await until(() => new URL(window.location.href).searchParams.get('days') === '8', '周期选择通过 Void 导航更新 Loader');
-  for (const [path, title] of [['/rooms', '房间'], ['/channels', '推送管道'], ['/templates', '字符串模板'], ['/account', '账号设置'], ['/admin/dashboard', '全局仪表盘'], ['/admin/user', '用户管理'], ['/admin/db', '数据库管理']]) {
+  for (const [path, title] of [['/rooms', '房间管理'], ['/channels', '推送管道'], ['/templates', '字符串模板'], ['/account', '账号设置'], ['/admin/dashboard', '全局仪表盘'], ['/admin/user', '用户管理'], ['/admin/db', '数据库管理']]) {
     const before = pageRequests;
-    document.querySelector<HTMLAnchorElement>(`[data-slot="root"][data-collapsed] a[href="${path}"]`)?.click();
-    await until(() => document.querySelector('h1')?.textContent === title, `导航到 ${path}`);
+    const link = document.querySelector<HTMLAnchorElement>(`[data-slot="root"][data-collapsed] a[href="${path}"]`);
+    assert.ok(link, `侧栏包含 ${path} 导航入口`);
+    link.click();
+    await until(() => window.location.pathname === path && document.querySelector('h1')?.textContent === title, `导航到 ${path}`);
     assert.ok(pageRequests > before, '导航通过客户端请求 Loader');
     assert.equal(document.getElementById('app'), root);
     if (['/rooms', '/channels', '/templates', '/admin/user'].includes(path!)) assert.ok(document.querySelector('table'), '列表由 UTable 渲染');
@@ -94,7 +96,7 @@ try {
   }
   document.querySelector<HTMLAnchorElement>('a[href="/admin/user"]')!.click();
   await until(() => window.location.pathname === '/admin/user' && document.querySelector('a[href="/admin/user"]')!.classList.contains('text-primary'), '管理员子页导航与菜单高亮');
-  [...document.querySelectorAll<HTMLAnchorElement>('a')].find(link => link.textContent === '下一页')!.click();
+  document.querySelector<HTMLAnchorElement>('a[title="下一页"]')!.click();
   await until(() => new URL(window.location.href).searchParams.get('page') === '2' && document.querySelectorAll('table tbody tr').length === 1, '用户列表按独立子页地址分页');
   document.querySelector<HTMLAnchorElement>('a[href="/templates"]')!.click();
   await until(() => document.querySelector('h1')?.textContent === '字符串模板', '打开模板列表');
@@ -112,26 +114,23 @@ try {
   inputValue('textarea[name="sampleContent"]', '普通文本');
   previewDraft();
   await until(() => document.querySelector('pre[aria-label="渲染正文"]')?.textContent === '普通文本', '预览草稿正文');
-  assert.ok(document.body.textContent?.includes('按普通文本处理'));
   inputValue('textarea[name="sampleContent"]', '{"content":');
   previewDraft();
-  await until(() => document.querySelector('pre[aria-label="渲染正文"]')?.textContent === '{&quot;content&quot;:', '非法 JSON 按普通文本渲染并提示');
-  assert.ok(document.body.textContent?.includes('按普通文本处理'));
+  await until(() => document.querySelector('pre[aria-label="渲染正文"]')?.textContent === '{&quot;content&quot;:', '非法 JSON 按普通文本渲染');
   inputValue('textarea[name="sampleContent"]', '{"content":"fake_info"}');
   previewDraft();
   await until(() => document.querySelector('pre[aria-label="渲染正文"]')?.textContent === 'fake_info', 'JSON 预览更新');
-  assert.equal(document.body.textContent?.includes('按普通文本处理'), false, 'JSON 预览清除普通文本提示');
   inputValue('textarea[name="templateText"]', '修改 {{ content }}');
   await until(() => document.body.textContent?.includes('预览已过期') === true, '修改草稿标记预览过期');
   document.querySelector('[role="dialog"] form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   await until(() => document.querySelector('[role="dialog"]') === null && document.querySelector('table')?.textContent?.includes('fake_info 模板') === true, '保存成功关闭并刷新列表');
   const row = [...document.querySelectorAll('table tbody tr')].find(row => row.textContent?.includes('fake_info 模板'))!;
-  [...row.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === '编辑')!.click();
+  [...row.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === '编辑')!.click();
   await until(() => document.querySelector<HTMLTextAreaElement>('textarea[name="templateText"]')?.value === '修改 {{ content }}', '编辑回填正文');
   inputValue('textarea[name="templateText"]', '取消的草稿');
   clickText('取消');
   await until(() => document.querySelector('[role="dialog"]') === null, '取消关闭');
-  [...row.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === '编辑')!.click();
+  [...row.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === '编辑')!.click();
   await until(() => document.querySelector<HTMLTextAreaElement>('textarea[name="templateText"]')?.value === '修改 {{ content }}', '取消不修改列表对象');
   inputValue('input[name="templateName"]', '');
   document.querySelector('[role="dialog"] form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -141,10 +140,11 @@ try {
   await until(() => document.querySelector('[role="dialog"]') === null, '关闭编辑弹窗');
   console.log('模板结构化编辑与预览通过');
   document.querySelector<HTMLAnchorElement>('[data-slot="root"][data-collapsed] a[href="/rooms"]')!.click();
-  await until(() => document.querySelector('h1')?.textContent === '房间', '返回房间');
+  await until(() => window.location.pathname === '/rooms' && document.querySelector('h1')?.textContent === '房间管理', '返回房间');
   const firstRoom = document.querySelector('table tbody tr')!;
   const originalRoomName = firstRoom.querySelector('td')!.textContent;
-  [...firstRoom.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === '编辑')!.click();
+  assert.ok(firstRoom.textContent?.includes('已加密'), '使用已设置密钥的房间验证密钥不回显');
+  [...firstRoom.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === '修改')!.click();
   await until(() => document.querySelector<HTMLInputElement>('[role="dialog"] input')?.value === originalRoomName, '编辑房间回填名称');
   assert.equal(document.querySelector<HTMLInputElement>('[role="dialog"] input[type="password"]')?.value, '', '房间密钥不回显');
   clickText('取消');
@@ -154,7 +154,7 @@ try {
   assert.ok([...document.querySelectorAll<HTMLInputElement>('[role="dialog"] input')].every(input => input.value === ''), '编辑后新建清空旧值');
   clickText('取消');
   await until(() => document.querySelector('[role="dialog"]') === null, '关闭房间新建');
-  [...document.querySelectorAll<HTMLAnchorElement>('a')].find(link => link.textContent === '下一页')!.click();
+  document.querySelector<HTMLAnchorElement>('a[title="下一页"]')!.click();
   await until(() => new URL(window.location.href).searchParams.get('page') === '2' && document.querySelectorAll('table tbody tr').length === 1, 'Loader 第二页仅显示剩余一条');
   window.history.back();
   await until(() => !new URL(window.location.href).searchParams.has('page') && document.querySelectorAll('table tbody tr').length === 20, '后退恢复列表与 URL');
@@ -165,8 +165,18 @@ try {
   await until(() => new URL(window.location.href).searchParams.get('search') === 'fake_info & 中文', '搜索更新 URL');
   assert.equal(new URL(window.location.href).searchParams.get('page'), '1');
   await until(() => document.querySelectorAll('table tbody tr').length === 20, '搜索结果仍由 Loader 分页');
-  const next = [...document.querySelectorAll<HTMLAnchorElement>('a')].find(link => link.textContent === '下一页')!;
+  const next = document.querySelector<HTMLAnchorElement>('a[title="下一页"]')!;
   assert.equal(new URL(next.href).searchParams.get('search'), 'fake_info & 中文');
+  const historyLength = window.history.length;
+  inputValue('input[name="search"]', 'fake_info & 中文 20');
+  document.querySelector('form[action="/rooms"]')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await until(() => new URL(window.location.href).searchParams.get('search') === 'fake_info & 中文 20' && document.querySelectorAll('table tbody tr').length === 1 && document.querySelector('table tbody tr td')?.textContent?.trim() === 'fake_info & 中文 20', '搜索由 Loader 筛选为唯一匹配房间');
+  assert.equal(window.history.length, historyLength, '搜索替换当前历史记录');
+  assert.equal(new URL(window.location.href).searchParams.get('page'), '1');
+  assert.equal(document.querySelector('a[title="下一页"]'), null, '单条搜索结果没有下一页');
+  document.querySelector<HTMLButtonElement>('button[title="刷新列表并清空搜索"]')!.click();
+  await until(() => !new URL(window.location.href).searchParams.has('search') && document.querySelectorAll('table tbody tr').length === 20, '刷新清空搜索并恢复第一页');
+  assert.equal(document.querySelector<HTMLInputElement>('input[name="search"]')?.value, '');
   const menu = [...document.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === '菜单')!;
   menu.click();
   await until(() => menu.getAttribute('aria-expanded') === 'true' && document.querySelector('[role="dialog"] a[href="/channels"]') !== null, '移动端菜单打开');

@@ -23,20 +23,22 @@ describe.skipIf(!existsSync('dist/client/.vite/manifest.json'))('生产客户端
       await services.system.initialize();
       const user = (await services.repo.one('users', { username: 'fake_username' }))!;
       for (let index = 0; index < 21; index++) {
-        await services.management.saveRoom(user, { id: 0, name: `fake_info & 中文 ${index}`, code: `fake_info-${index}`, key: '' });
+        await services.management.saveRoom(user, { id: 0, name: `fake_info & 中文 ${index}`, code: `fake_info-${index}`, key: 'fake_secret' });
       }
       for (let index = 0; index < 20; index++) await services.repo.insert('users', { username: `fake_user-${index}`, password: 'fake_password', role: 0, lastLoginTime: null, lastForgetTime: null });
     } finally { await services.repo.close(); }
     const app = (await import(/* @vite-ignore */ pathToFileURL(resolve('dist/ssr/app.js')).href)).default;
     const response = await app.request('/login');
+    expect(response.status).toBe(200);
     const htmlPath = resolve(`debug/tmpfile-AI-login-${randomUUID()}.html`);
     writeFileSync(htmlPath, await response.text());
     const manifest = JSON.parse(readFileSync('dist/client/.vite/manifest.json', 'utf8')) as Record<string, { file: string; isEntry?: boolean }>;
     const entry = Object.values(manifest).find(value => value.isEntry)!;
-    const result = spawnSync(process.platform === 'win32' ? 'vp.exe' : 'vp', ['node', '--import', 'tsx', 'tests/fixtures/login-client.ts', htmlPath, resolve('dist/client', entry.file), resolve('dist/ssr/app.js')], { encoding: 'utf8', timeout: 25000 });
+    const result = spawnSync(process.execPath, ['--import', 'tsx', 'tests/fixtures/login-client.ts', htmlPath, resolve('dist/client', entry.file), resolve('dist/ssr/app.js')], { encoding: 'utf8', timeout: 25000 });
     expect(result.error).toBeUndefined();
     expect(result.status, result.stderr + result.stdout).toBe(0);
     expect(result.stdout).toContain('登录表单切换通过');
+    expect(result.stdout).toContain('模板结构化编辑与预览通过');
     expect(result.stdout).toContain('Void 导航与用户菜单通过');
   }, 30000);
 });
