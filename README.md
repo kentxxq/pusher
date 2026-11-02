@@ -4,7 +4,7 @@ Void Pages + Vue + Nuxt UI 的消息推送中心，使用 Drizzle 连接 MySQL �
 
 ## 配置与开发
 
-需要 Node.js 24.21 或更高版本及 Vite+；依赖统一通过 `vp` 管理，包管理器使用 pnpm。
+需要 Node.js 24.x（至少 24.22.0）或 26.12.0 及以上版本，以及 Vite+；依赖统一通过 `vp` 管理，包管理器使用 pnpm。
 
 ```sh
 vp install
