@@ -8,7 +8,8 @@ it('保留通用页面错误，并仅记录 Drizzle 包装的驱动代码', asyn
   const output = vi.spyOn(console, 'error').mockImplementation(() => {});
   const cause = Object.assign(new Error('fake_password'), { code: 'ER_BAD_FIELD_ERROR', errno: 1054, sqlState: '42S22', sql: 'fake_secret' });
   await expect(perform(async () => { throw new Error('fake_url', { cause }); })).rejects.toThrow('操作失败，请检查服务器配置或数据库状态');
-  expect(output).toHaveBeenCalledWith('[pusher] 服务端操作失败', { code: 'ER_BAD_FIELD_ERROR', errno: 1054, sqlState: '42S22' });
+  expect(output).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(output.mock.calls[0]![0])).toEqual({ msg: '[pusher] 服务端操作失败', component: 'http', code: 'ER_BAD_FIELD_ERROR', errno: 1054, sqlState: '42S22' });
   expect(JSON.stringify(output.mock.calls)).not.toMatch(/fake_password|fake_secret|fake_url/);
 });
 
@@ -17,5 +18,7 @@ it('业务错误不记录为未知异常，没有合法代码的异常也不打�
   await expect(perform(async () => { throw new BusinessError('记录不存在', 404); })).rejects.toThrow('记录不存在');
   expect(output).not.toHaveBeenCalled();
   await expect(perform(async () => { throw Object.assign(new Error('fake_password'), { code: 'mysql://fake_user:fake_password@REPLACE_ME', sqlState: 'fake_secret' }); })).rejects.toThrow();
-  expect(output).toHaveBeenCalledWith('[pusher] 服务端操作失败', { code: 'UNKNOWN' });
+  expect(output).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(output.mock.calls[0]![0])).toEqual({ msg: '[pusher] 服务端操作失败', component: 'http', code: 'UNKNOWN' });
+  expect(JSON.stringify(output.mock.calls)).not.toMatch(/fake_password|fake_secret|fake_user|REPLACE_ME/);
 });

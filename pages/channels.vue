@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
+import { logger } from 'void/log';
 import { Form, useForm, useRouter } from '@void/vue';
 import { useToast } from '@nuxt/ui/composables/useToast';
 import ConfirmModal from '../components/ConfirmModal.vue';
@@ -10,6 +11,7 @@ import { actionErrorMessage } from '../shared/action-error';
 import type { TableColumn } from '@nuxt/ui';
 import type { Props } from './channels.server';
 
+const log = logger.child({ component: 'channels-page' });
 const props = defineProps<Props>();
 const router = useRouter();
 
@@ -263,8 +265,8 @@ async function loadChannelHistory(channelId: number, page = 1) {
         };
       }
     }
-  } catch (e) {
-    console.error(e);
+  } catch {
+    log.error('渠道历史加载失败', { channelId, page });
   } finally {
     channelHistoryLoading.value = false;
   }

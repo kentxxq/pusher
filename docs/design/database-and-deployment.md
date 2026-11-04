@@ -90,6 +90,8 @@ flowchart LR
 
 启动失败时输出失败阶段、可安全展示的配置或迁移提示及错误代码，不输出数据库驱动原始异常、连接串或 SQL。
 
+服务端及独立脚本通过 `void/log` 向标准输出或标准错误写入 JSON 日志，不依赖 Cloudflare 日志服务，也不在应用内写日志文件或执行轮转。systemd 部署由 journald 收集运行日志，服务器独立配置持久化、容量和保留期限，通过 `journalctl -u pusher.service` 查询；服务名被覆盖时使用实际名称。Taskfile 不修改这些服务器日志设置。
+
 服务器独立维护 `.env` 与 SQLite 可写数据目录，应用更新不得覆盖数据库。在线备份需保持 SQLite 主文件和 WAL 的一致性。
 
 通过根目录 `Taskfile.yml` 直接调用 oc-rsync 和 SSH 同步部署，systemd 服务及权限由用户自行配置。Taskfile 是项目配套，不是 Void 官方部署配置。连接参数、远端 vp 路径、服务名及本机工具路径由 `.env` 提供，示例见 `.env.example`；Windows 默认使用系统 OpenSSH，其他平台默认使用 ssh。远端只需安装标准 rsync。`publish` 构建后检查远端配置、执行 `systemctl stop`、调用 `sync`、安装锁定版本的生产依赖，再执行 `systemctl start`。`sync` 同步已有运行文件并按删除开关清理过期文件，不安装依赖或启停服务；`check` 检查 SSH 连接；`exec` 在远端应用目录执行调用者指定的命令；远端 vp 不在 SSH 环境的 PATH 中时，通过本机 `.env` 的 `REMOTE_VP` 指定绝对路径。

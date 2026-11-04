@@ -2,9 +2,12 @@ import type { CloudContext } from 'void';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { z } from 'zod';
+import { logger } from 'void/log';
 import { BusinessError, type Actor } from '../shared/domain';
 import { services } from './services';
 import type { TemplatePreview } from './template-renderer';
+
+const log = logger.child({ component: 'http' });
 
 declare module 'void' {
   interface CloudContextVariables {
@@ -32,7 +35,7 @@ function reportOperationError(error: unknown) {
   for (let depth = 0; depth < 5 && typeof current === 'object' && current !== null; depth++) {
     const detail = current as { code?: unknown; errno?: unknown; sqlState?: unknown; cause?: unknown };
     if (typeof detail.code === 'string' && /^[A-Z][A-Z0-9_]{0,63}$/.test(detail.code)) {
-      console.error('[pusher] 服务端操作失败', {
+      log.error('[pusher] 服务端操作失败', {
         code: detail.code,
         ...(typeof detail.errno === 'number' && Number.isSafeInteger(detail.errno) ? { errno: detail.errno } : {}),
         ...(typeof detail.sqlState === 'string' && /^[0-9A-Z]{5}$/.test(detail.sqlState) ? { sqlState: detail.sqlState } : {}),
@@ -41,7 +44,7 @@ function reportOperationError(error: unknown) {
     }
     current = detail.cause;
   }
-  console.error('[pusher] 服务端操作失败', { code: 'UNKNOWN' });
+  log.error('[pusher] 服务端操作失败', { code: 'UNKNOWN' });
 }
 function actionException(status: number, message: string) {
   return new HTTPException(status as ContentfulStatusCode, { message, res: Response.json({ message }, { status: status as ContentfulStatusCode }) });

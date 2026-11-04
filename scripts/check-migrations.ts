@@ -2,6 +2,9 @@ import { cpSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'nod
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { logger } from 'void/log';
+
+const log = logger.child({ component: 'check-migrations' });
 
 function manifest(directory: string): string {
   return readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).map(entry => {
@@ -19,7 +22,7 @@ for (const dialect of ['mysql', 'sqlite']) {
   writeFileSync(config, `import { defineConfig } from 'drizzle-kit';\nexport default defineConfig(${JSON.stringify({ dialect, schema: resolve('server/db', `${dialect}.ts`).replaceAll('\\', '/'), out: out.replaceAll('\\', '/') })});\n`);
   const result = spawnSync(process.platform === 'win32' ? 'vp.exe' : 'vp', ['exec', 'drizzle-kit', 'generate', '--config', config], { encoding: 'utf8', timeout: 60000, input: '' });
   if (result.status !== 0 || before !== manifest(out)) {
-    console.error(`${dialect} schema 或迁移快照有变更，请执行 vpr db:generate 并审阅 SQL`);
+    log.error(`${dialect} schema 或迁移快照有变更，请执行 vpr db:generate 并审阅 SQL`, { dialect });
     process.exitCode = 1;
-  } else console.log(`${dialect} schema 与迁移快照一致`);
+  } else log.info(`${dialect} schema 与迁移快照一致`, { dialect });
 }
