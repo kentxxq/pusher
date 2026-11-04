@@ -182,7 +182,7 @@ function remove(id: number) {
 type Row = Props['list']['items'][number];
 const columns: TableColumn<Row>[] = [
   { accessorKey: 'name', header: '名称' },
-  { accessorKey: 'code', header: '模板代码', meta: { class: { th: 'w-64' } } },
+  { accessorKey: 'code', header: '模板代码', meta: { class: { th: 'w-128' } } },
   { id: 'actions', header: '操作', meta: { class: { th: 'w-44' } } }
 ];
 const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路径非法' };
@@ -237,7 +237,7 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
           :sorting-options="{ enableSorting: false }"
           class="w-full"
           :ui="{
-            base: 'w-full min-w-[40rem] table-fixed',
+            base: 'w-full min-w-[56rem] table-fixed',
             th: 'py-3.5 px-4 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
             td: 'py-3.5 px-4 text-sm border-b border-default whitespace-normal wrap-anywhere'
           }"
