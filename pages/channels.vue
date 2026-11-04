@@ -294,19 +294,19 @@ function changeChannelHistoryPage(targetPage: number) {
 // 管道发送历史表格列定义
 type ChannelHistoryRow = { id: number; messageId: number; status: number; success: boolean; result: string | null; recordedAt: string; content: string };
 const historyColumns: TableColumn<ChannelHistoryRow>[] = [
-  { accessorKey: 'id', header: 'ID' },
-  { accessorKey: 'recordedAt', header: '发送时间' },
-  { accessorKey: 'status', header: '状态' },
+  { accessorKey: 'id', header: 'ID', meta: { class: { th: 'w-24' } } },
+  { accessorKey: 'recordedAt', header: '发送时间', meta: { class: { th: 'w-48' } } },
+  { accessorKey: 'status', header: '状态', meta: { class: { th: 'w-56' } } },
   { accessorKey: 'content', header: '消息内容' },
-  { id: 'actions', header: '操作' }
+  { id: 'actions', header: '操作', meta: { class: { th: 'w-24' } } }
 ];
 
 type Row = Props['list']['items'][number];
 const columns: TableColumn<Row>[] = [
   { accessorKey: 'name', header: '管道名称' },
-  { accessorKey: 'type', header: '管道类型' },
-  { id: 'config', header: '配置状态' },
-  { id: 'actions', header: '操作' }
+  { accessorKey: 'type', header: '管道类型', meta: { class: { th: 'w-36' } } },
+  { id: 'config', header: '配置状态', meta: { class: { th: 'w-56' } } },
+  { id: 'actions', header: '操作', meta: { class: { th: 'w-[32rem]' } } }
 ];
 </script>
 
@@ -360,9 +360,9 @@ const columns: TableColumn<Row>[] = [
           :sorting-options="{ enableSorting: false }"
           class="w-full"
           :ui="{
-            base: 'w-full min-w-full table-auto',
+            base: 'w-full min-w-[68rem] table-fixed',
             th: 'py-3.5 px-4 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
-            td: 'py-3.5 px-4 text-sm border-b border-default'
+            td: 'py-3.5 px-4 text-sm border-b border-default whitespace-normal wrap-anywhere'
           }"
         >
           <!-- 管道名称列：不再使用二级页面链接，纯文本展示 -->
@@ -634,9 +634,9 @@ const columns: TableColumn<Row>[] = [
                 :columns="historyColumns"
                 class="w-full"
                 :ui="{
-                  base: 'w-full min-w-full table-auto',
+                  base: 'w-full min-w-[56rem] table-fixed',
                   th: 'py-2.5 px-3 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
-                  td: 'py-2.5 px-3 text-xs border-b border-default'
+                  td: 'py-2.5 px-3 text-xs border-b border-default whitespace-normal wrap-anywhere'
                 }"
               >
                 <template #id-cell="{ row }">

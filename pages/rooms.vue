@@ -344,19 +344,19 @@ function changeHistoryPage(targetPage: number) {
 // 表格列定义（历史弹窗用）
 type HistoryRow = { id: number; content: string; recordedAt: string };
 const historyColumns: TableColumn<HistoryRow>[] = [
-  { accessorKey: 'id', header: 'ID' },
-  { accessorKey: 'recordedAt', header: '推送时间' },
+  { accessorKey: 'id', header: 'ID', meta: { class: { th: 'w-24' } } },
+  { accessorKey: 'recordedAt', header: '推送时间', meta: { class: { th: 'w-48' } } },
   { accessorKey: 'content', header: '消息内容' },
-  { id: 'actions', header: '操作' }
+  { id: 'actions', header: '操作', meta: { class: { th: 'w-24' } } }
 ];
 
 // 表格列定义
 type Row = Props['list']['items'][number];
 const columns: TableColumn<Row>[] = [
   { accessorKey: 'name', header: '房间名称' },
-  { accessorKey: 'code', header: '房间代码' },
-  { accessorKey: 'hasKey', header: '安全密钥' },
-  { id: 'actions', header: '操作' }
+  { accessorKey: 'code', header: '房间代码', meta: { class: { th: 'w-48' } } },
+  { accessorKey: 'hasKey', header: '安全密钥', meta: { class: { th: 'w-36' } } },
+  { id: 'actions', header: '操作', meta: { class: { th: 'w-[46rem]' } } }
 ];
 </script>
 
@@ -408,9 +408,9 @@ const columns: TableColumn<Row>[] = [
           :sorting-options="{ enableSorting: false }"
           class="w-full"
           :ui="{
-            base: 'w-full min-w-full table-auto',
+            base: 'w-full min-w-[80rem] table-fixed',
             th: 'py-3.5 px-4 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
-            td: 'py-3.5 px-4 text-sm border-b border-default'
+            td: 'py-3.5 px-4 text-sm border-b border-default whitespace-normal wrap-anywhere'
           }"
         >
           <!-- 房间名称列：不再包含进入详情页的链接，也不再显示管道数量徽标 -->
@@ -420,8 +420,8 @@ const columns: TableColumn<Row>[] = [
 
           <!-- 房间代码列 -->
           <template #code-cell="{ row }">
-            <div class="flex items-center gap-1.5 font-mono text-xs text-muted whitespace-nowrap">
-              <span>{{ row.original.code }}</span>
+            <div class="flex items-center gap-1.5 font-mono text-xs text-muted">
+              <span class="min-w-0 whitespace-normal wrap-anywhere">{{ row.original.code }}</span>
               <UButton
                 icon="i-lucide-copy"
                 size="xs"
@@ -647,9 +647,9 @@ const columns: TableColumn<Row>[] = [
                 :columns="historyColumns"
                 class="w-full"
                 :ui="{
-                  base: 'w-full min-w-full table-auto',
+                  base: 'w-full min-w-[44rem] table-fixed',
                   th: 'py-2.5 px-3 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
-                  td: 'py-2.5 px-3 text-xs border-b border-default'
+                  td: 'py-2.5 px-3 text-xs border-b border-default whitespace-normal wrap-anywhere'
                 }"
               >
                 <template #id-cell="{ row }">

@@ -183,9 +183,9 @@ function selectRole(id: number, value: unknown) {
 type Row = Props['users']['items'][number];
 const columns: TableColumn<Row>[] = [
   { accessorKey: 'username', header: '用户名' },
-  { accessorKey: 'role', header: '角色组' },
-  { accessorKey: 'lastLoginTime', header: '最近登录（北京时间）' },
-  { id: 'actions', header: '操作' }
+  { accessorKey: 'role', header: '角色组', meta: { class: { th: 'w-48' } } },
+  { accessorKey: 'lastLoginTime', header: '最近登录（北京时间）', meta: { class: { th: 'w-56' } } },
+  { id: 'actions', header: '操作', meta: { class: { th: 'w-32' } } }
 ];
 </script>
 
@@ -256,20 +256,20 @@ const columns: TableColumn<Row>[] = [
           :sorting-options="{ enableSorting: false }"
           class="w-full"
           :ui="{
-            base: 'w-full min-w-full table-auto',
+            base: 'w-full min-w-[52rem] table-fixed',
             th: 'py-3.5 px-4 text-xs font-semibold text-muted bg-muted/20 border-b border-default whitespace-nowrap',
-            td: 'py-3.5 px-4 text-sm border-b border-default'
+            td: 'py-3.5 px-4 text-sm border-b border-default whitespace-normal wrap-anywhere'
           }"
         >
           <template #username-cell="{ row }">
             <div class="flex items-center gap-2.5">
               <div
-                class="size-7 rounded-lg flex items-center justify-center font-bold text-xs uppercase"
+                class="size-7 shrink-0 rounded-lg flex items-center justify-center font-bold text-xs uppercase"
                 :class="row.original.username.startsWith('delete_') ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'"
               >
                 {{ row.original.username.replace(/^delete_/, '').slice(0, 1) || '?' }}
               </div>
-              <div class="flex items-center gap-1.5">
+              <div class="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span
                   class="font-medium"
                   :class="row.original.username.startsWith('delete_') ? 'line-through text-muted' : 'text-highlighted'"

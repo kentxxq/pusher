@@ -22,7 +22,10 @@ async function clearKey() {
 }
 
 type Row = Props['history']['items'][number];
-const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时间（北京时间）' }, { accessorKey: 'content', header: '内容' }];
+const columns: TableColumn<Row>[] = [
+  { accessorKey: 'recordedAt', header: '时间（北京时间）', meta: { class: { th: 'w-56' } } },
+  { accessorKey: 'content', header: '内容' }
+];
 </script>
 <template>
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div class="flex items-center gap-3"><h1 class="text-2xl font-semibold text-highlighted">{{ room.name }}</h1><UBadge variant="subtle" class="font-mono">{{ room.code }}</UBadge></div><Link class="text-primary hover:underline" href="/rooms">返回房间列表</Link></div>
@@ -34,7 +37,7 @@ const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时�
       </UListbox>
       <UButton type="submit" :loading="channels.pending">保存关联</UButton><p v-if="channels.wasSuccessful" class="text-sm text-success">关联已更新</p></Form></UCard>
     <UCard><template #header><h2 class="text-lg font-semibold text-highlighted">发送消息</h2></template><Form :form="send" :render-error="actionErrorMessage" class="grid gap-4"><UFormField label="消息内容" :error="send.errors.content"><UTextarea v-model="send.data.content" class="w-full" /></UFormField><UFormField label="模板代码（可选）"><UInput v-model="send.data.templateCode" class="w-full" /></UFormField><UButton type="submit" :loading="send.pending">发送</UButton><p v-if="send.wasSuccessful" class="text-sm text-success">消息已发送</p></Form></UCard></div>
-  <UCard><template #header><h2 class="text-lg font-semibold text-highlighted">消息历史</h2></template><UTable :data="history.items" :columns="columns" empty="暂无消息" :sorting-options="{ enableSorting: false }" :ui="{ td: 'max-w-sm whitespace-normal wrap-anywhere' }">
+  <UCard><template #header><h2 class="text-lg font-semibold text-highlighted">消息历史</h2></template><UTable :data="history.items" :columns="columns" empty="暂无消息" :sorting-options="{ enableSorting: false }" :ui="{ base: 'w-full min-w-[36rem] table-fixed', td: 'whitespace-normal wrap-anywhere' }">
       <template #content-cell="{ row }"><span class="whitespace-pre-wrap wrap-anywhere">{{ row.original.content }}</span></template>
     </UTable><Pagination class="pt-4" v-bind="history" :path="`/rooms/${room.id}`" /></UCard>
 
