@@ -36,7 +36,7 @@ const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时�
     <UCard><template #header><h2 class="text-lg font-semibold text-highlighted">发送消息</h2></template><Form :form="send" :render-error="actionErrorMessage" class="grid gap-4"><UFormField label="消息内容" :error="send.errors.content"><UTextarea v-model="send.data.content" class="w-full" /></UFormField><UFormField label="模板代码（可选）"><UInput v-model="send.data.templateCode" class="w-full" /></UFormField><UButton type="submit" :loading="send.pending">发送</UButton><p v-if="send.wasSuccessful" class="text-sm text-success">消息已发送</p></Form></UCard></div>
   <UCard><template #header><h2 class="text-lg font-semibold text-highlighted">消息历史</h2></template><UTable :data="history.items" :columns="columns" empty="暂无消息" :sorting-options="{ enableSorting: false }" :ui="{ td: 'max-w-sm whitespace-normal wrap-anywhere' }">
       <template #content-cell="{ row }"><span class="whitespace-pre-wrap wrap-anywhere">{{ row.original.content }}</span></template>
-    </UTable><Pagination v-bind="history" :path="`/rooms/${room.id}`" /></UCard>
+    </UTable><Pagination class="pt-4" v-bind="history" :path="`/rooms/${room.id}`" /></UCard>
 
   <ConfirmModal
     v-model:open="confirmClearKeyOpen"

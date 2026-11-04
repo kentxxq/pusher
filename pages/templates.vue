@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, shallowRef, watch } from 'vue';
-import { Form, Link, useForm, useRouter } from '@void/vue';
+import { Form, useForm, useRouter } from '@void/vue';
 import { useToast } from '@nuxt/ui/composables/useToast';
 import ConfirmModal from '../components/ConfirmModal.vue';
+import Pagination from '../components/Pagination.vue';
 import { listUrl } from '../shared/ui-navigation';
 import { actionErrorMessage } from '../shared/action-error';
 import { templateValueSchema } from '../shared/validation';
@@ -198,7 +199,7 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
     <!-- 主表格卡片：撑满全宽 -->
     <UCard class="w-full overflow-hidden" :ui="{ body: 'p-0 sm:p-0' }">
       <div class="p-4 sm:p-5 border-b border-default">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
           <form method="get" action="/templates" class="flex items-center gap-2 m-0" @submit.prevent="triggerSearch(searchValue)">
             <UInput
               v-model="searchValue"
@@ -220,44 +221,9 @@ const statusNames = { matched: '已匹配', missing: '未命中', invalid: '路�
             </UButton>
           </form>
 
-          <!-- 翻页控制（按钮无文字，位于页码左侧） -->
-          <div class="flex items-center gap-3 text-xs text-muted whitespace-nowrap">
-            <div class="flex items-center gap-1">
-              <Link
-                v-if="list.page > 1"
-                :href="listUrl('/templates', list.page - 1, search)"
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
-                title="上一页"
-              >
-                <UIcon name="i-lucide-chevron-left" class="size-3.5" />
-              </Link>
-              <span
-                v-else
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
-                title="上一页（已是第一页）"
-              >
-                <UIcon name="i-lucide-chevron-left" class="size-3.5" />
-              </span>
-
-              <Link
-                v-if="list.page * list.pageSize < list.total"
-                :href="listUrl('/templates', list.page + 1, search)"
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
-                title="下一页"
-              >
-                <UIcon name="i-lucide-chevron-right" class="size-3.5" />
-              </Link>
-              <span
-                v-else
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
-                title="下一页（已是最后一页）"
-              >
-                <UIcon name="i-lucide-chevron-right" class="size-3.5" />
-              </span>
-            </div>
-
-            <span>共 <strong class="font-semibold text-highlighted">{{ list.total }}</strong> 个模板 · 第 <strong class="font-semibold text-highlighted">{{ list.page }}</strong> 页</span>
-          </div>
+          <Pagination v-bind="list" path="/templates" :search="search">
+            <span>共 <strong class="font-semibold text-highlighted">{{ list.total }}</strong> 个模板</span>
+          </Pagination>
         </div>
         <UAlert v-if="deletion.error" color="error" :description="actionErrorMessage(deletion.error)" class="mt-2" />
       </div>

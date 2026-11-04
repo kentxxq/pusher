@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { Form, Link, useForm, useRouter } from '@void/vue';
+import { Form, useForm, useRouter } from '@void/vue';
 import { useToast } from '@nuxt/ui/composables/useToast';
 import ConfirmModal from '../components/ConfirmModal.vue';
+import Pagination from '../components/Pagination.vue';
 import { channelNames, channelStyles, defaultChannelStyle } from '../shared/domain';
 import { listUrl } from '../shared/ui-navigation';
 import { actionErrorMessage } from '../shared/action-error';
@@ -282,9 +283,8 @@ function openHistoryDialog(channel: Props['list']['items'][number]) {
   loadChannelHistory(channel.id, 1);
 }
 
-function changeChannelHistoryPage(delta: number) {
-  if (!activeChannel.value) return;
-  const targetPage = channelHistoryData.value.page + delta;
+function changeChannelHistoryPage(targetPage: number) {
+  if (!activeChannel.value || channelHistoryLoading.value || targetPage === channelHistoryData.value.page) return;
   if (targetPage < 1 || targetPage > totalChannelHistoryPages.value) return;
   loadChannelHistory(activeChannel.value.id, targetPage);
 }
@@ -319,7 +319,7 @@ const columns: TableColumn<Row>[] = [
     <!-- 主表格卡片：默认撑满所有空间 -->
     <UCard class="w-full overflow-hidden" :ui="{ body: 'p-0 sm:p-0' }">
       <div class="p-4 sm:p-5 border-b border-default">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
           <form method="get" action="/channels" class="flex items-center gap-2 m-0" @submit.prevent="triggerSearch(searchValue)">
             <UInput
               v-model="searchValue"
@@ -341,44 +341,9 @@ const columns: TableColumn<Row>[] = [
             </UButton>
           </form>
 
-          <!-- 翻页控制（按钮无文字，位于页码左侧） -->
-          <div class="flex items-center gap-3 text-xs text-muted whitespace-nowrap">
-            <div class="flex items-center gap-1">
-              <Link
-                v-if="list.page > 1"
-                :href="listUrl('/channels', list.page - 1, search)"
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
-                title="上一页"
-              >
-                <UIcon name="i-lucide-chevron-left" class="size-3.5" />
-              </Link>
-              <span
-                v-else
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
-                title="上一页（已是第一页）"
-              >
-                <UIcon name="i-lucide-chevron-left" class="size-3.5" />
-              </span>
-
-              <Link
-                v-if="list.page * list.pageSize < list.total"
-                :href="listUrl('/channels', list.page + 1, search)"
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default bg-elevated hover:bg-muted/40 text-highlighted transition-colors"
-                title="下一页"
-              >
-                <UIcon name="i-lucide-chevron-right" class="size-3.5" />
-              </Link>
-              <span
-                v-else
-                class="inline-flex items-center justify-center size-6 text-xs font-medium rounded-md border border-default/40 bg-muted/10 text-muted/40 cursor-not-allowed"
-                title="下一页（已是最后一页）"
-              >
-                <UIcon name="i-lucide-chevron-right" class="size-3.5" />
-              </span>
-            </div>
-
-            <span>共 <strong class="font-semibold text-highlighted">{{ list.total }}</strong> 个管道 · 第 <strong class="font-semibold text-highlighted">{{ list.page }}</strong> 页</span>
-          </div>
+          <Pagination v-bind="list" path="/channels" :search="search">
+            <span>共 <strong class="font-semibold text-highlighted">{{ list.total }}</strong> 个管道</span>
+          </Pagination>
         </div>
         <p v-if="deletion.error" class="whitespace-pre-wrap text-sm text-error mt-2">{{ actionErrorMessage(deletion.error) }}</p>
         <p v-if="testForm.error" class="whitespace-pre-wrap text-sm text-error mt-2">{{ actionErrorMessage(testForm.error) }}</p>
@@ -611,7 +576,7 @@ const columns: TableColumn<Row>[] = [
       v-model:open="historyModalOpen"
       :ui="{
         content: 'w-[calc(100vw-2rem)] sm:max-w-4xl',
-        header: 'flex items-center justify-between',
+        header: 'flex flex-wrap items-center justify-between',
         wrapper: 'flex-1'
       }"
     >
@@ -635,34 +600,13 @@ const columns: TableColumn<Row>[] = [
 
       <!-- 右上角翻页控制与总条数（靠右侧关闭按钮对齐，翻页在左，页码在右缓冲防误触） -->
       <template #actions>
-        <div class="flex items-center gap-2.5 text-xs ml-auto mr-8">
+        <div class="flex min-w-0 flex-wrap items-center gap-2.5 text-xs ml-auto mr-8">
           <UIcon v-if="channelHistoryLoading" name="i-lucide-loader-2" class="size-3.5 animate-spin text-primary" />
-          <!-- 翻页按钮（位于页码左侧） -->
-          <div class="flex items-center gap-1">
-            <UButton
-              size="xs"
-              variant="outline"
-              color="neutral"
-              icon="i-lucide-chevron-left"
-              title="上一页"
-              :disabled="channelHistoryData.page <= 1 || channelHistoryLoading"
-              @click="changeChannelHistoryPage(-1)"
-            />
-            <UButton
-              size="xs"
-              variant="outline"
-              color="neutral"
-              icon="i-lucide-chevron-right"
-              title="下一页"
-              :disabled="channelHistoryData.page >= totalChannelHistoryPages || channelHistoryLoading"
-              @click="changeChannelHistoryPage(1)"
-            />
-          </div>
-
-          <!-- 页码与总条数信息（位于翻页按钮右侧、关闭按钮左侧） -->
-          <span class="text-muted whitespace-nowrap">
-            共 <strong class="text-highlighted font-semibold">{{ channelHistoryData.total }}</strong> 条 · 第 <strong class="text-highlighted font-semibold">{{ channelHistoryData.page }} / {{ totalChannelHistoryPages }}</strong> 页
-          </span>
+          <Pagination v-bind="channelHistoryData" :disabled="channelHistoryLoading" @update:page="changeChannelHistoryPage">
+            <span class="text-muted whitespace-nowrap">
+              共 <strong class="text-highlighted font-semibold">{{ channelHistoryData.total }}</strong> 条
+            </span>
+          </Pagination>
         </div>
       </template>
 

@@ -19,5 +19,5 @@ const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时�
   <UCard><template #header><h2 class="text-lg font-semibold text-highlighted">发送历史</h2></template><UTable :data="history.items" :columns="columns" empty="暂无发送记录" :sorting-options="{ enableSorting: false }" :ui="{ td: 'max-w-sm whitespace-normal wrap-anywhere' }">
       <template #content-cell="{ row }"><span class="whitespace-pre-wrap wrap-anywhere">{{ row.original.content }}</span></template>
       <template #status-cell="{ row }"><UBadge :color="row.original.status === 0 ? 'neutral' : row.original.success ? 'success' : 'error'" variant="subtle">{{ row.original.status === 0 ? '待发送' : row.original.success ? '成功' : '失败' }}</UBadge></template>
-    </UTable><Pagination v-bind="history" :path="`/channels/${channel.id}`" /></UCard>
+    </UTable><Pagination class="pt-4" v-bind="history" :path="`/channels/${channel.id}`" /></UCard>
 </template>

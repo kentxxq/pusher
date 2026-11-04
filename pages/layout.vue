@@ -55,7 +55,7 @@ getCurrentInstance()!.appContext.app.use(ui, { router: createUiNavigation(router
           <UAlert v-if="logout.error" color="error" :description="actionErrorMessage(logout.error)" />
         </template>
       </UDashboardSidebar>
-      <UDashboardPanel>
+      <UDashboardPanel :ui="{ body: '[scrollbar-gutter:stable]' }">
         <template #body>
           <main class="mx-auto w-full max-w-7xl space-y-6 p-2 sm:p-4">
             <UButton class="lg:hidden" icon="i-lucide-menu" color="neutral" variant="ghost" :aria-expanded="open" @click="open = true">菜单</UButton>
