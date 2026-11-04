@@ -1,7 +1,8 @@
 import type { Actor } from '../../shared/domain';
 import { BusinessError } from '../../shared/domain';
 import type { Repository } from '../db/repository';
-import { randomPassword, requireAdmin, timestamp } from './auth';
+import { randomPassword, requireAdmin } from './auth';
+import { timestamp, parseTimestamp } from '../../shared/time';
 import type { SendMail } from './mail';
 import { ManagementService, paginate } from './management';
 
@@ -9,7 +10,7 @@ export class UserService {
   constructor(private readonly repo: Repository, private readonly management: ManagementService, private readonly mail: SendMail) {}
   async passwordMail(username: string) {
     let user = await this.repo.one('users', { username });
-    if (user?.lastForgetTime && Date.now() - Date.parse(user.lastForgetTime.replace(' ', 'T') + 'Z') < 600000) throw new BusinessError('10分钟内只允许发送一封邮件', 429);
+    if (user?.lastForgetTime && Date.now() - parseTimestamp(user.lastForgetTime) < 600000) throw new BusinessError('10分钟内只允许发送一封邮件', 429);
     if (!user) {
       const password = randomPassword();
       const id = await this.repo.insert('users', { username, password, role: 0, lastForgetTime: timestamp(), lastLoginTime: null });

@@ -1,0 +1,73 @@
+version: "3"
+
+# 部署连接信息在 .env 中配置，示例见 .env.example。
+dotenv: [".env"]
+
+vars:
+  # 本机使用 oc-rsync；Windows 使用系统 OpenSSH。
+  SYNC_PROGRAM: '{{.SYNC_PROGRAM | default "oc-rsync"}}'
+  SSH_PROGRAM: '{{.SSH_PROGRAM | default (ternary "C:/Windows/System32/OpenSSH/ssh.exe" "ssh" (eq OS "windows"))}}'
+  SSH_ARGS: '{{.SSH_ARGS | default ""}}'
+  DELETE_ON_SYNC: '{{.DELETE_ON_SYNC | default "true"}}'
+  SYSTEMD_SERVICE: '{{.SYSTEMD_SERVICE | default "pusher.service"}}'
+  REMOTE_VP: '{{.REMOTE_VP | default "vp"}}'
+  RUNTIME_DIRECTORIES: [dist, server, shared, scripts, db]
+  EXCLUDE_LIST:
+    - ".env*"
+    - "node_modules/"
+    - "data/"
+    - "debug/"
+    - "*.sqlite"
+    - "*.sqlite-shm"
+    - "*.sqlite-wal"
+    - "*.db"
+    - "*.db-shm"
+    - "*.db-wal"
+
+tasks:
+  sync:
+    desc: "执行同步任务 (DELETE_ON_SYNC: {{.DELETE_ON_SYNC}})"
+    requires:
+      vars: [REMOTE_USER, REMOTE_HOST, REMOTE_TARGET]
+    vars:
+      _DELETE_FLAG: '{{if eq (toString .DELETE_ON_SYNC) "true"}}--delete{{end}}'
+      # 先保护配置和数据，再包含运行目录及其内容，最后排除其他路径。
+      _FILTER_FLAGS: '{{range .EXCLUDE_LIST}}--exclude={{. | shellQuote}} {{end}}{{range .RUNTIME_DIRECTORIES}}--include={{printf "%s/" . | shellQuote}} --include={{printf "%s/**" . | shellQuote}} {{end}}--include=package.json --include=pnpm-lock.yaml --exclude="*"'
+    preconditions:
+      - sh: 'test "{{.DELETE_ON_SYNC}}" = "true" || test "{{.DELETE_ON_SYNC}}" = "false"'
+        msg: DELETE_ON_SYNC 只能是 true 或 false
+      - sh: "test -f dist/ssr/app.js && test -d dist/client && test -f scripts/start.ts && test -f scripts/database.ts && test -d server && test -d shared && test -d db/migrations && test -f package.json && test -f pnpm-lock.yaml"
+        msg: 缺少运行目录或依赖清单，请确认项目完整并先执行 vp run build
+    cmds:
+      - 'echo ">>> [SSH-DEPLOY] 同步启动 (清除模式: {{.DELETE_ON_SYNC}}) -> {{.REMOTE_HOST}}:{{.REMOTE_TARGET}}"'
+      - '"{{.SYNC_PROGRAM}}" -rtcv --progress -e ''"{{.SSH_PROGRAM}}" -o BatchMode=yes {{.SSH_ARGS}}'' {{._DELETE_FLAG}} {{._FILTER_FLAGS}} "./" "{{.REMOTE_USER}}@{{.REMOTE_HOST}}:{{.REMOTE_TARGET}}"'
+
+  exec:
+    desc: '在远程终端运行命令 (用法: task exec REMOTE_CMD="ls -l")'
+    requires:
+      vars: [REMOTE_USER, REMOTE_HOST, REMOTE_TARGET, REMOTE_CMD]
+    vars:
+      _REMOTE_SCRIPT: "cd {{.REMOTE_TARGET | shellQuote}} && {{.REMOTE_CMD}}"
+    cmds:
+      - '"{{.SSH_PROGRAM}}" -o BatchMode=yes {{.SSH_ARGS}} "{{.REMOTE_USER}}@{{.REMOTE_HOST}}" {{._REMOTE_SCRIPT | shellQuote}}'
+
+  check:
+    desc: 测试 SSH 连接
+    requires:
+      vars: [REMOTE_USER, REMOTE_HOST]
+    cmds:
+      - '"{{.SSH_PROGRAM}}" {{.SSH_ARGS}} -o ConnectTimeout=5 "{{.REMOTE_USER}}@{{.REMOTE_HOST}}" "echo 成功连接到 {{.REMOTE_HOST}}"'
+
+  publish:
+    desc: 构建并发布到远程服务器
+    requires:
+      vars: [REMOTE_USER, REMOTE_HOST, REMOTE_TARGET]
+    cmds:
+      - vp run build
+      - task: exec
+        vars:
+          REMOTE_CMD: 'test -f .env && command -v "{{.REMOTE_VP}}" >/dev/null && systemctl stop "{{.SYSTEMD_SERVICE}}"'
+      - task: sync
+      - task: exec
+        vars:
+          REMOTE_CMD: '"{{.REMOTE_VP}}" install --prod --frozen-lockfile && systemctl start "{{.SYSTEMD_SERVICE}}"'

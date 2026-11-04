@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { appConfig } from '../config';
 import { BusinessError, roleNames, type Actor } from '../../shared/domain';
 import type { Repository } from '../db/repository';
+import { timestamp } from '../../shared/time';
 
 export function equalSecret(a: string, b: string) {
   const left = Buffer.from(a), right = Buffer.from(b);
@@ -40,6 +41,5 @@ export class AuthService {
   }
 }
 
-export function timestamp(date = new Date()) { return date.toISOString().replace('T', ' ').replace('Z', ''); }
 export function randomPassword() { return randomBytes(9).toString('base64url'); }
 export function requireAdmin(actor: Actor) { if (actor.role !== 100) throw new BusinessError('需要管理员权限', 403); }

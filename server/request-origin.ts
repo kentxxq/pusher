@@ -2,5 +2,13 @@
 export function publicRequest(request: Request, origin: string) {
   const url = new URL(request.url);
   if (url.origin === origin) return request;
-  return new Request(`${origin}${url.pathname}${url.search}`, request);
+  // Node 适配器提供轻量 Request，不能将其直接用作 RequestInit。
+  const init: RequestInit & { duplex?: 'half' } = {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+    signal: request.signal,
+  };
+  if (init.body) init.duplex = 'half';
+  return new Request(`${origin}${url.pathname}${url.search}`, init);
 }

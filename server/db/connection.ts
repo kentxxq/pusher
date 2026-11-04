@@ -30,7 +30,7 @@ function queryWindow<T extends { limit(value: number): unknown; offset(value: nu
 
 export function openDatabase(config = databaseConfig()) {
   if (config.dialect === 'mysql') {
-    const pool = createPool({ uri: config.url, timezone: 'Z', dateStrings: true, connectionLimit: 5 });
+    const pool = createPool({ uri: config.url, timezone: '+08:00', dateStrings: true, connectionLimit: 5 });
     const db = mysqlDrizzle(pool);
     function tableRepository<T extends (typeof mysql)[TableName]>(table: T): EntityRepository<T['$inferSelect']> {
       const columns = getTableColumns(table);

@@ -53,30 +53,38 @@ export async function migrateDatabase(mode: 'migrate' | 'baseline' | 'reset' = '
     } finally { file.close(); }
     return;
   }
-  const connection = await createConnection({ uri: config.url, dateStrings: true });
+  const connection = await createConnection({ uri: config.url, timezone: '+08:00', dateStrings: true });
   const lockName = `pusher:migrate:${new URL(config.url).pathname}`.slice(0, 64);
   try {
     const [lock] = await connection.query<RowDataPacket[]>('SELECT GET_LOCK(?, 30) AS acquired', [lockName]);
     if (Number(lock[0]?.acquired) !== 1) throw new SetupError('无法获取数据库迁移锁');
+    const [settings] = await connection.query<RowDataPacket[]>('SELECT @@lower_case_table_names AS value');
+    const tableKey = (name: string) => Number(settings[0]?.value) === 0 ? name : name.toLowerCase();
     const [tables] = await connection.query<RowDataPacket[]>('SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE()');
-    const names = Object.values(mysql).map(getTableName);
-    const hasHistory = tables.some(t => t.name === '__drizzle_migrations');
+    const names = Object.values(mysql).map(table => tableKey(getTableName(table)));
+    const hasHistory = tables.some(t => tableKey(t.name) === '__drizzle_migrations');
     const history = hasHistory ? (await connection.query<RowDataPacket[]>('SELECT hash, created_at FROM __drizzle_migrations ORDER BY created_at'))[0] as unknown as History[] : [];
     if (mode === 'reset') {
-      for (const name of [...names, '__drizzle_migrations']) await connection.query(`DROP TABLE IF EXISTS \`${name}\``);
+      for (const name of [...Object.values(mysql).map(getTableName), '__drizzle_migrations']) await connection.query(`DROP TABLE IF EXISTS \`${name}\``);
     } else if (mode === 'baseline') {
       if (history.length) throw new SetupError('该数据库已有迁移记录');
       for (const table of Object.values(mysql)) {
-        const [actual] = await connection.query<RowDataPacket[]>('SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type, COLUMN_KEY AS pk, IS_NULLABLE AS nullable, EXTRA AS extra FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?', [getTableName(table)]);
+        const actualTableName = tables.find(t => tableKey(t.name) === tableKey(getTableName(table)))?.name ?? getTableName(table);
+        const [actual] = await connection.query<RowDataPacket[]>('SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type, COLUMN_KEY AS pk, IS_NULLABLE AS nullable, EXTRA AS extra, COLUMN_DEFAULT AS defaultValue FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND BINARY TABLE_NAME = BINARY ?', [actualTableName]);
         const expected = Object.values(getTableColumns(table));
         const normalize = (value: string) => value.toLowerCase().replace(/int\(\d+\)/g, 'int').replace('boolean', 'tinyint');
-        if (actual.length !== expected.length || expected.some(c => { const a = actual.find(a => a.name === c.name); return !a || normalize(a.type) !== normalize(c.getSQLType()) || (c.primary && a.pk !== 'PRI') || (c.notNull && a.nullable !== 'NO') || (c.primary && !String(a.extra).includes('auto_increment')); })) throw new SetupError(`表 ${getTableName(table)} 与初始结构不匹配，请先核对旧库字段类型、精度与默认值`);
+        if (actual.length !== expected.length || expected.some(c => {
+          const a = actual.find(a => a.name === c.name);
+          const expectedDefault = c.default == null ? null : String(typeof c.default === 'boolean' ? Number(c.default) : c.default);
+          const actualDefault = a?.defaultValue == null ? null : String(a.defaultValue);
+          return !a || normalize(a.type) !== normalize(c.getSQLType()) || (c.primary !== (a.pk === 'PRI')) || (c.notNull !== (a.nullable === 'NO')) || (c.primary && !String(a.extra).includes('auto_increment')) || actualDefault !== expectedDefault;
+        })) throw new SetupError(`表 ${getTableName(table)} 与初始结构不匹配，请先核对旧库字段类型、精度与默认值`);
       }
       await connection.query('CREATE TABLE IF NOT EXISTS __drizzle_migrations (id SERIAL PRIMARY KEY, hash TEXT NOT NULL, created_at BIGINT)');
       await connection.query('INSERT INTO __drizzle_migrations(hash, created_at) VALUES (?, ?)', [migrations[0]!.hash, migrations[0]!.folderMillis]);
       return;
     } else {
-      if (!history.length && tables.some(t => names.includes(t.name))) throw new SetupError('检测到旧业务表，请先备份并执行 db:baseline');
+      if (!history.length && tables.some(t => names.includes(tableKey(t.name)))) throw new SetupError('检测到旧业务表，请先备份并执行 db:baseline');
       verifyHistory(history, migrations);
     }
     await mysqlMigrate(mysqlDrizzle(connection), { migrationsFolder });

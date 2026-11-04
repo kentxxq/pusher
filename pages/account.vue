@@ -21,12 +21,12 @@ const showConfirm = ref(false);
 
 const roleMeta = computed(() => {
   if (props.user.role === 100) {
-    return { label: '超级管理员', color: 'error' as const, icon: 'i-lucide-shield-check', desc: '拥有系统所有管理权限' };
+    return { label: '超级管理员', color: 'error' as const, icon: 'i-lucide-shield-check' };
   }
   if (props.user.role === 1) {
-    return { label: 'VIP 会员', color: 'warning' as const, icon: 'i-lucide-crown', desc: '拥有高级特权服务' };
+    return { label: 'VIP 会员', color: 'warning' as const, icon: 'i-lucide-crown' };
   }
-  return { label: '普通用户', color: 'neutral' as const, icon: 'i-lucide-user', desc: '标准消息推送权限' };
+  return { label: '普通用户', color: 'neutral' as const, icon: 'i-lucide-user' };
 });
 
 const isPasswordTooShort = computed(() => form.data.newPassword.length > 0 && form.data.newPassword.length < 6);
@@ -50,7 +50,6 @@ async function savePassword() {
   if (form.wasSuccessful) {
     toast.add({
       title: '密码修改成功',
-      description: '登录密码已更新，请妥善保管新密码。',
       color: 'success',
       icon: 'i-lucide-check-circle-2',
     });
@@ -81,7 +80,6 @@ function resetForm() {
             <span>{{ roleMeta.label }}</span>
           </UBadge>
         </div>
-        <p class="text-xs text-muted mt-1">管理你的登录凭证、账户信息及推送资产概览</p>
       </div>
 
       <div class="flex items-center gap-2">
@@ -100,7 +98,6 @@ function resetForm() {
             <div class="flex items-center justify-between">
               <div>
                 <h3 class="text-sm font-semibold text-highlighted">个人资料</h3>
-                <p class="text-xs text-muted">当前登录账户的身份凭据</p>
               </div>
               <UIcon name="i-lucide-badge-check" class="size-4.5 text-primary" />
             </div>
@@ -120,7 +117,6 @@ function resetForm() {
                 <div class="flex items-center gap-2">
                   <h4 class="text-base font-bold text-highlighted truncate">{{ user.username }}</h4>
                 </div>
-                <p class="text-xs text-muted truncate mt-0.5">{{ roleMeta.desc }}</p>
               </div>
             </div>
 
@@ -163,7 +159,7 @@ function resetForm() {
               <div class="flex items-center justify-between py-1.5">
                 <span class="text-muted flex items-center gap-2">
                   <UIcon name="i-lucide-clock" class="size-3.5 text-muted" />
-                  最近登录 (UTC)
+                  最近登录（北京时间）
                 </span>
                 <span class="font-mono text-xs text-muted">{{ user.lastLoginTime || '当前会话已激活' }}</span>
               </div>
@@ -171,16 +167,6 @@ function resetForm() {
           </div>
         </UCard>
 
-        <!-- 安全提示卡片 -->
-        <div class="rounded-xl border border-default/80 bg-elevated/40 p-4 space-y-2 text-xs">
-          <div class="flex items-center gap-2 text-highlighted font-semibold">
-            <UIcon name="i-lucide-shield-alert" class="size-4 text-warning" />
-            <span>账号安全防护指引</span>
-          </div>
-          <p class="text-muted leading-relaxed">
-            修改密码后当前会话保持有效，但后续登录需使用新密码。为保障各消息通道及房间密钥安全，请勿将账号密码告知他人。
-          </p>
-        </div>
       </div>
 
       <!-- 右侧：安全设置与密码变更卡片 -->
@@ -190,7 +176,6 @@ function resetForm() {
             <div class="flex items-center justify-between">
               <div>
                 <h3 class="text-sm font-semibold text-highlighted">安全与密码修改</h3>
-                <p class="text-xs text-muted">定期更换强密码，提高系统推送服务的安全性</p>
               </div>
               <UIcon name="i-lucide-key-round" class="size-4.5 text-primary" />
             </div>
@@ -208,9 +193,6 @@ function resetForm() {
 
             <!-- 原密码字段 -->
             <UFormField label="原密码" :error="form.errors.oldPassword" required>
-              <template #help>
-                <span class="text-[11px] text-muted">请输入你当前登录正在使用的密码</span>
-              </template>
               <UInput
                 v-model="form.data.oldPassword"
                 :type="showOld ? 'text' : 'password'"
@@ -238,9 +220,6 @@ function resetForm() {
 
             <!-- 新密码字段 -->
             <UFormField label="新密码" :error="form.errors.newPassword || (isPasswordTooShort ? '新密码长度至少需要 6 个字符' : undefined)" required>
-              <template #help>
-                <span class="text-[11px] text-muted">密码长度不少于 6 位，建议包含大小写字母与数字</span>
-              </template>
               <UInput
                 v-model="form.data.newPassword"
                 :type="showNew ? 'text' : 'password'"
@@ -268,9 +247,6 @@ function resetForm() {
 
             <!-- 确认新密码字段 -->
             <UFormField label="确认新密码" :error="isPasswordMismatch ? '两次输入的新密码不一致，请仔细核对' : undefined" required>
-              <template #help>
-                <span class="text-[11px] text-muted">请再次输入上面的新密码以确保一致</span>
-              </template>
               <UInput
                 v-model="confirmPassword"
                 :type="showConfirm ? 'text' : 'password'"

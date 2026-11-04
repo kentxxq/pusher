@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { BusinessError, type Actor, type Channel, type Entities, type Page, type TableName } from '../../shared/domain';
 import { templateValueSchema, roomSchema, channelSchema, templateSchema } from '../../shared/validation';
 import type { Repository } from '../db/repository';
-import { timestamp } from './auth';
+import { timestamp } from '../../shared/time';
 import { ChannelSender, barkConfig } from './channels';
 
 export function paginate<T>(items: T[], page = 1, pageSize = 20): Page<T> {

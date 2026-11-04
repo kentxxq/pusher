@@ -13,6 +13,7 @@ import { createStatisticsReader } from '../server/db/statistics';
 import * as mysqlTables from '../server/db/mysql';
 import type { Actor } from '../shared/domain';
 import { SignJWT } from 'jose';
+import { timestamp } from '../shared/time';
 
 const mysqlUrl = process.env.TEST_MYSQL_URL;
 if (mysqlUrl && !new URL(mysqlUrl).pathname.startsWith('/pusher_ai_test_')) throw new Error('MySQL 测试仅允许 pusher_ai_test_ 前缀的独立数据库');
@@ -101,7 +102,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
       expect(await service.repo.all('templates', { userId: user.id })).toEqual([]);
       await expect(service.users.passwordMail(username)).rejects.toMatchObject({ status: 429 });
       expect(mail).toHaveBeenCalledTimes(1);
-      await service.repo.update('users', user.id, { lastForgetTime: new Date(Date.now() - 600001).toISOString().replace('T', ' ').replace('Z', '') });
+      await service.repo.update('users', user.id, { lastForgetTime: timestamp(new Date(Date.now() - 600001)) });
       await service.users.passwordMail(username);
       expect(mail).toHaveBeenCalledTimes(2);
       expect(mail).toHaveBeenLastCalledWith(username, 'pusher-用户注册', `欢迎注册pusher,你的用户名是${username},你的密码是${user.password}`);
@@ -247,7 +248,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
       for (const [messageId, channelId, success] of [[recent, channel, false], [boundary, 999, true], [otherMessage, 999, false], [old, channel, false]] as const) {
         await service.repo.insert('histories', { messageId, channelId, status: 1, success, result: null });
       }
-      const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-21T12:00:00Z'));
+      const clock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-21T12:00:00+08:00'));
       const reads = vi.spyOn(service.repo, 'all').mockRejectedValue(new Error('统计不能读取实体全集'));
       try {
         expect(await service.system.stats(admin, 1)).toMatchObject({ roomCount: 2, channelCount: 1, messageCount: 2, failureCount: 1,
@@ -295,7 +296,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
     it('按完整天数清理过期消息并删除对应发送历史', async () => {
       process.env.MESSAGE_RETENTION_DAYS = '30';
       const roomId = await service.management.saveRoom(admin, { id: 0, name: '清理房间', code: 'retention', key: '' });
-      const date = (days: number) => new Date(Date.now() - days * 86400000).toISOString().replace('T', ' ').replace('Z', '');
+      const date = (days: number) => timestamp(new Date(Date.now() - days * 86400000));
       const old = await service.repo.insert('messages', { type: 0, content: '过期', comment: '', roomId, recordedAt: date(31.5) });
       const kept = await service.repo.insert('messages', { type: 0, content: '保留', comment: '', roomId, recordedAt: date(30.5) });
       await service.repo.insert('histories', { channelId: 999, messageId: old, status: 1, success: true, result: null });

@@ -22,7 +22,7 @@ async function clearProxy() {
 }
 
 type Row = Props['history']['items'][number];
-const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时间（UTC）' }, { accessorKey: 'content', header: '内容' }, { accessorKey: 'status', header: '状态' }, { accessorKey: 'result', header: '结果' }];
+const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时间（北京时间）' }, { accessorKey: 'content', header: '内容' }, { accessorKey: 'status', header: '状态' }, { accessorKey: 'result', header: '结果' }];
 </script>
 <template>
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div class="flex items-center gap-3"><h1 class="text-2xl font-semibold text-highlighted">{{ channel.name }}</h1><UBadge variant="subtle" :class="channelStyles[channel.type]?.badgeClass || defaultChannelStyle.badgeClass"><span class="size-1.5 rounded-full mr-1 shrink-0" :class="channelStyles[channel.type]?.dotClass || defaultChannelStyle.dotClass" />{{ channelNames[channel.type] }}</UBadge></div><Link class="text-primary hover:underline" href="/channels">返回管道列表</Link></div>

@@ -27,7 +27,8 @@ describe('环境文件和发布入口', () => {
     const db = new Sqlite(path); db.exec('CREATE TABLE Room(Id INTEGER PRIMARY KEY, RoomName TEXT); INSERT INTO Room VALUES(1, \'保留原数据\');'); db.close();
     const result = spawnSync(vp, ['run', 'start'], { encoding: 'utf8', timeout: 15000, env: { ...process.env, DB_DIALECT: 'sqlite', SQLITE_PATH: path, JWT_KEY: Buffer.alloc(32, 7).toString('base64'), JWT_ISSUER: 'fake_info', JWT_AUDIENCE: 'fake_info', JWT_EXPIRE_DAYS: '1', APP_URL: 'http://localhost' } });
     expect(result.status).toBe(1); expect(result.error).toBeUndefined();
-    expect(result.stderr).toContain('启动失败，请核对环境配置、数据库迁移和构建产物');
+    expect(result.stderr).toContain('启动失败，阶段：数据库迁移');
+    expect(result.stderr).toContain('检测到旧业务表');
     expect(result.stdout).not.toContain('Pusher 已启动');
     const raw = new Sqlite(path); try { expect(raw.prepare('SELECT RoomName FROM Room').get()).toEqual({ RoomName: '保留原数据' }); } finally { raw.close(); }
   });

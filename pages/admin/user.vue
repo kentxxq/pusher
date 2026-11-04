@@ -183,7 +183,7 @@ type Row = Props['users']['items'][number];
 const columns: TableColumn<Row>[] = [
   { accessorKey: 'username', header: '用户名' },
   { accessorKey: 'role', header: '角色组' },
-  { accessorKey: 'lastLoginTime', header: '最近登录 (UTC)' },
+  { accessorKey: 'lastLoginTime', header: '最近登录（北京时间）' },
   { id: 'actions', header: '操作' }
 ];
 </script>
@@ -197,7 +197,6 @@ const columns: TableColumn<Row>[] = [
           <h1 class="text-2xl font-bold tracking-tight text-highlighted">用户管理</h1>
           <UBadge variant="subtle" color="neutral" size="sm">共 {{ users.total }} 个用户</UBadge>
         </div>
-        <p class="text-xs text-muted mt-1">管理系统用户账号、权限角色及账户生命周期</p>
       </div>
 
       <div>

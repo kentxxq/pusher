@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { BusinessError, type Actor, type TemplateObject } from '../../shared/domain';
 import type { Repository } from '../db/repository';
-import { timestamp, requireAdmin } from './auth';
+import { requireAdmin } from './auth';
+import { timestamp, parseTimestamp } from '../../shared/time';
 import { ManagementService } from './management';
 import { UserService } from './users';
 
@@ -43,7 +44,7 @@ export class SystemService {
     if (demo && demo.role !== 100) { await this.management.deleteUserData(demo.id); await this.management.initDemo(demo.id); }
     const retention = z.coerce.number().int().nonnegative().default(30).parse(process.env.MESSAGE_RETENTION_DAYS);
     for (const message of await this.repo.all('messages')) {
-      if (Math.floor((Date.now() - Date.parse(message.recordedAt.replace(' ', 'T') + 'Z')) / 86400000) <= retention) continue;
+      if (Math.floor((Date.now() - parseTimestamp(message.recordedAt)) / 86400000) <= retention) continue;
       for (const history of await this.repo.all('histories', { messageId: message.id })) await this.repo.remove('histories', history.id);
       await this.repo.remove('messages', message.id);
     }

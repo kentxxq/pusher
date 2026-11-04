@@ -16,9 +16,7 @@
     "db:migrate": "tsx scripts/database.ts migrate",
     "db:baseline": "tsx scripts/database.ts baseline",
     "db:check": "tsx scripts/check-migrations.ts",
-    "test": "vitest run",
-    "docs:dev": "vitepress dev docs/docs-website",
-    "docs:build": "vitepress build docs/docs-website"
+    "test": "vitest run"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.17",
@@ -37,6 +35,7 @@
     "node-cron": "^4.6.0",
     "nodemailer": "^7.0.13",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "undici": "^7.30.1",
     "void": "1.5.0",
     "vue": "^3.5.44",
@@ -49,11 +48,8 @@
     "@types/nodemailer": "^7.0.12",
     "drizzle-kit": "^0.31.11",
     "happy-dom": "^21.0.4",
-    "medium-zoom": "^1.1.2",
-    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^8.3.5",
-    "vitepress": "^1.6.4",
     "vitest": "^4.1.12",
     "vue-tsc": "^3.3.13"
   },

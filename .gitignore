@@ -15,5 +15,3 @@ data/
 *.db
 *.db-shm
 *.db-wal
-docs/docs-website/.vitepress/cache/
-docs/docs-website/.vitepress/dist/

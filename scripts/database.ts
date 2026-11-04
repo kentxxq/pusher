@@ -1,6 +1,6 @@
 import { migrateDatabase } from '../server/db/migrations';
 import { services, closeServices } from '../server/services';
-import { SetupError } from '../server/errors';
+import { SetupError, errorCode } from '../server/errors';
 import { BusinessError } from '../shared/domain';
 
 const command = process.argv[2];
@@ -12,5 +12,7 @@ try {
 } catch (error) {
   // 数据库驱动错误可能包含地址或 SQL，不直接打印原始错误。
   console.error(error instanceof SetupError || error instanceof BusinessError ? error.message : '数据库操作失败，请核对配置、权限及数据库结构');
+  const code = errorCode(error);
+  if (code) console.error(`错误代码：${code}`);
   process.exitCode = 1;
 } finally { await closeServices(); }

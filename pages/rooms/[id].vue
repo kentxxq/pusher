@@ -22,7 +22,7 @@ async function clearKey() {
 }
 
 type Row = Props['history']['items'][number];
-const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时间（UTC）' }, { accessorKey: 'content', header: '内容' }];
+const columns: TableColumn<Row>[] = [{ accessorKey: 'recordedAt', header: '时间（北京时间）' }, { accessorKey: 'content', header: '内容' }];
 </script>
 <template>
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div class="flex items-center gap-3"><h1 class="text-2xl font-semibold text-highlighted">{{ room.name }}</h1><UBadge variant="subtle" class="font-mono">{{ room.code }}</UBadge></div><Link class="text-primary hover:underline" href="/rooms">返回房间列表</Link></div>

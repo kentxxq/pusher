@@ -1,7 +1,8 @@
 import type { Actor, PushInput } from '../../shared/domain';
 import { BusinessError } from '../../shared/domain';
 import type { Repository } from '../db/repository';
-import { equalSecret, timestamp } from './auth';
+import { equalSecret } from './auth';
+import { timestamp } from '../../shared/time';
 import { ChannelSender } from './channels';
 
 import { contentText, renderTemplate } from '../template-renderer';
