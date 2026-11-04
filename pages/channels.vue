@@ -71,7 +71,6 @@ function refreshChannels() {
 const form = useForm('/channels?save', { id: 0, name: '', type: 0, url: '', proxy: '', config: '', csrf: props.csrf });
 const deletion = useForm('/channels?delete', { id: 0, csrf: props.csrf });
 const testForm = useForm('/channels?test', { id: 0, csrf: props.csrf });
-const proxyForm = useForm('/channels?clearProxy', { id: 0, csrf: props.csrf });
 const roomForm = useForm('/channels?rooms', { id: 0, roomIds: [] as number[], csrf: props.csrf });
 
 const types = channelNames.map((label, value) => ({ label, value }));
@@ -133,7 +132,7 @@ function edit(row?: Props['list']['items'][number]) {
     name: row?.name ?? '',
     type: row?.type ?? 0,
     url: '',
-    proxy: '',
+    proxy: row?.proxy ?? '',
     config: ''
   });
   editModalOpen.value = true;
@@ -182,28 +181,6 @@ async function sendTest(channel: Props['list']['items'][number]) {
   } else if (testForm.error) {
     showToast(`发送失败: ${actionErrorMessage(testForm.error)}`, 'error');
   }
-}
-
-// 清除代理（使用 Nuxt UI 弹窗）
-function clearProxy(channel: Props['list']['items'][number]) {
-  confirmState.value = {
-    open: true,
-    title: '清除代理配置',
-    description: `清除管道【${channel.name}】的代理配置？清除后将通过直连方式请求。`,
-    confirmText: '确认清除',
-    color: 'warning',
-    icon: 'i-lucide-shield-alert',
-    loading: false,
-    action: async () => {
-      proxyForm.data.id = channel.id;
-      proxyForm.data.csrf = props.csrf;
-      await proxyForm.post();
-      if (proxyForm.wasSuccessful) {
-        showToast('代理配置已清除');
-        confirmState.value.open = false;
-      }
-    }
-  };
 }
 
 // 打开关联房间弹窗并初始化数据
@@ -451,16 +428,6 @@ const columns: TableColumn<Row>[] = [
                 <UBadge :color="row.original.hasProxy ? 'info' : 'neutral'" variant="subtle" size="xs">
                   {{ row.original.hasProxy ? '使用代理' : '直连' }}
                 </UBadge>
-                <UButton
-                  v-if="row.original.hasProxy"
-                  size="xs"
-                  color="error"
-                  variant="ghost"
-                  title="清除代理配置"
-                  @click="clearProxy(row.original)"
-                >
-                  清除
-                </UButton>
               </div>
             </div>
           </template>
@@ -537,11 +504,11 @@ const columns: TableColumn<Row>[] = [
               <USelect v-model="form.data.type" :items="types" class="w-full" />
             </UFormField>
           </div>
-          <UFormField label="管道地址 / 收件邮箱" :error="form.errors.url">
+          <UFormField label="管道地址" :error="form.errors.url">
             <UInput v-model="form.data.url" type="password" autocomplete="new-password" class="w-full" />
           </UFormField>
           <UFormField label="代理地址（可选）" :error="form.errors.proxy">
-            <UInput v-model="form.data.proxy" type="password" autocomplete="new-password" class="w-full" />
+            <UInput v-model="form.data.proxy" class="w-full" />
           </UFormField>
           <UFormField label="管道 JSON 配置（可选，Bark 加密配置在此填写）" :error="form.errors.config">
             <UTextarea v-model="form.data.config" class="w-full" />

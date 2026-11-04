@@ -34,7 +34,7 @@ export class ManagementService {
   }
   async channels(actor: Actor, page: number, search = '') {
     const items = (await this.repo.all('channels', { userId: actor.id })).filter(c => c.name.includes(search));
-    return paginate(items.map(({ url, proxy, config, ...channel }) => ({ ...channel, hasUrl: !!url, hasProxy: !!proxy, hasConfig: !!config })), page);
+    return paginate(items.map(({ url, config, ...channel }) => ({ ...channel, hasUrl: !!url, hasProxy: !!channel.proxy, hasConfig: !!config })), page);
   }
   async saveChannel(actor: Actor, input: z.infer<typeof channelSchema>) {
     const previous = input.id ? await this.owned('channels', actor, input.id) : undefined;
@@ -43,7 +43,7 @@ export class ManagementService {
     else if (!URL.canParse(url) || !['http:', 'https:'].includes(new URL(url).protocol)) throw new BusinessError('请输入有效的 HTTP/HTTPS 管道地址');
     if (input.proxy && (!URL.canParse(input.proxy) || !['http:', 'https:'].includes(new URL(input.proxy).protocol))) throw new BusinessError('代理地址无效');
     if (input.config) { try { JSON.parse(input.config); } catch { throw new BusinessError('管道配置必须是 JSON'); } }
-    const value = { name: input.name, type: input.type, url, proxy: input.proxy || previous?.proxy || '', config: input.config || previous?.config || '', userId: actor.id };
+    const value = { name: input.name, type: input.type, url, proxy: input.proxy, config: input.config || previous?.config || '', userId: actor.id };
     if (value.type === 4) {
       try { barkConfig.parse(value.config ? JSON.parse(value.config) : {}); }
       catch { throw new BusinessError('Bark 加密配置无效，请检查模式、密钥与 IV 长度'); }
