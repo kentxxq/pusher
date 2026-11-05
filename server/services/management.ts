@@ -4,7 +4,9 @@ import { BusinessError, type Actor, type Channel, type Entities, type Page, type
 import { templateValueSchema, roomSchema, channelSchema, templateSchema } from '../../shared/validation';
 import type { Repository } from '../db/repository';
 import { timestamp } from '../../shared/time';
-import { ChannelSender, barkConfig } from './channels';
+import { disabledProxy, proxySchema } from '../../shared/proxy';
+import { ChannelSender } from './channels';
+import { parseChannelConfig, publicChannelConfig, saveChannelConfig } from '../channels';
 
 export function paginate<T>(items: T[], page = 1, pageSize = 20): Page<T> {
   page = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1; pageSize = Math.min(100, Math.max(1, Math.floor(pageSize) || 20));
@@ -34,24 +36,33 @@ export class ManagementService {
   }
   async channels(actor: Actor, page: number, search = '') {
     const items = (await this.repo.all('channels', { userId: actor.id })).filter(c => c.name.includes(search));
-    return paginate(items.map(({ url, config, ...channel }) => ({ ...channel, hasUrl: !!url, hasProxy: !!channel.proxy, hasConfig: !!config })), page);
+    return paginate(items.map(channel => { const { url, config, ...safe } = channel; return { ...safe, url, hasUrl: !!url, hasProxy: channel.proxyEnabled, hasConfig: !!config, configuration: publicChannelConfig(channel) }; }), page);
   }
-  async saveChannel(actor: Actor, input: z.infer<typeof channelSchema>) {
+  async saveChannel(actor: Actor, rawInput: unknown) {
+    const input = channelSchema.parse(rawInput);
     const previous = input.id ? await this.owned('channels', actor, input.id) : undefined;
     const url = input.url || previous?.url || '';
     if (input.type === 5) { if (!z.email().safeParse(url).success) throw new BusinessError('邮箱管道需要有效邮箱地址'); }
     else if (!URL.canParse(url) || !['http:', 'https:'].includes(new URL(url).protocol)) throw new BusinessError('请输入有效的 HTTP/HTTPS 管道地址');
-    if (input.proxy && (!URL.canParse(input.proxy) || !['http:', 'https:'].includes(new URL(input.proxy).protocol))) throw new BusinessError('代理地址无效');
-    if (input.config) { try { JSON.parse(input.config); } catch { throw new BusinessError('管道配置必须是 JSON'); } }
-    const value = { name: input.name, type: input.type, url, proxy: input.proxy, config: input.config || previous?.config || '', userId: actor.id };
-    if (value.type === 4) {
-      try { barkConfig.parse(value.config ? JSON.parse(value.config) : {}); }
-      catch { throw new BusinessError('Bark 加密配置无效，请检查模式、密钥与 IV 长度'); }
-    }
+    const proxyResult = proxySchema.safeParse(input);
+    if (!proxyResult.success) throw new BusinessError('代理配置无效，请检查服务器、端口和认证信息');
+    const proxy = input.proxyEnabled ? proxyResult.data : { ...disabledProxy };
+    if (previous && previous.type !== input.type && !input.url) throw new BusinessError('切换渠道类型时必须重新填写地址');
+    const config = saveChannelConfig(input.type, input.config, previous, input.resetConfig);
+    const value = { name: input.name, type: input.type, url, ...proxy, config, userId: actor.id };
     if (previous) { await this.repo.update('channels', input.id, value); return input.id; }
     return this.repo.insert('channels', value);
   }
-  async clearChannelSecret(actor: Actor, id: number, field: 'proxy' | 'config') { await this.owned('channels', actor, id); await this.repo.update('channels', id, { [field]: '' }); }
+  async migrateChannelConfigs() {
+    let invalid = 0;
+    for (const channel of await this.repo.all('channels')) {
+      let normalized: string;
+      try { normalized = JSON.stringify(parseChannelConfig(channel.type, channel.config)); }
+      catch { invalid++; continue; }
+      if (normalized !== channel.config) await this.repo.update('channels', channel.id, { config: normalized });
+    }
+    return invalid;
+  }
   async clearRoomKey(actor: Actor, id: number) { await this.owned('rooms', actor, id); await this.repo.update('rooms', id, { key: '' }); }
   async templates(actor: Actor, page: number, search = '') { return paginate((await this.repo.all('templates', { userId: actor.id })).filter(t => t.name.includes(search) || t.code.includes(search)), page); }
   async saveTemplate(actor: Actor, input: z.infer<typeof templateSchema>) {
@@ -85,12 +96,12 @@ export class ManagementService {
   }
   async channelDetail(actor: Actor, id: number, page: number) {
     const channel = await this.owned('channels', actor, id);
-    const { url, proxy, config, ...safeChannel } = channel;
+    const { url, config, ...safeChannel } = channel;
     const relations = await this.repo.all('relations', { channelId: id });
     const roomIds = new Set(relations.map(r => r.roomId));
     const history = await this.repo.page('histories', { channelId: id }, page);
     const messages = new Map((await this.repo.all('messages', { id: history.items.map(h => h.messageId) })).map(m => [m.id, m]));
-    return { channel: { ...safeChannel, hasUrl: !!url, hasProxy: !!proxy, hasConfig: !!config }, rooms: (await this.repo.all('rooms', { userId: actor.id })).filter(r => roomIds.has(r.id)).map(r => ({ id: r.id, name: r.name })), history: { ...history, items: history.items.map(h => ({ ...h, content: messages.get(h.messageId)?.content || '', recordedAt: messages.get(h.messageId)?.recordedAt || '' })) } };
+    return { channel: { ...safeChannel, url, hasUrl: !!url, hasProxy: channel.proxyEnabled, hasConfig: !!config, configuration: publicChannelConfig(channel) }, rooms: (await this.repo.all('rooms', { userId: actor.id })).filter(r => roomIds.has(r.id)).map(r => ({ id: r.id, name: r.name })), history: { ...history, items: history.items.map(h => ({ ...h, content: messages.get(h.messageId)?.content || '', recordedAt: messages.get(h.messageId)?.recordedAt || '' })) } };
   }
   async testChannel(actor: Actor, id: number) {
     const channel = await this.owned('channels', actor, id);
@@ -117,7 +128,7 @@ export class ManagementService {
   }
   async initDemo(id: number) {
     const roomId = await this.repo.insert('rooms', { name: '示例-房间名', code: randomUUID(), key: '', userId: id, createdAt: timestamp() });
-    const channelId = await this.repo.insert('channels', { name: '示例-飞书', type: 2, url: 'https://open.feishu.cn/open-apis/bot/v2/hook/REPLACE_ME', proxy: '', config: '', userId: id });
+    const channelId = await this.repo.insert('channels', { name: '示例-飞书', type: 2, url: 'https://open.feishu.cn/open-apis/bot/v2/hook/REPLACE_ME', ...disabledProxy, config: '', userId: id });
     await this.repo.insert('relations', { roomId, channelId });
     await this.repo.insert('templates', { name: '示例模板-测试', code: randomUUID(), userId: id, value: { Variables: [{ VariableName: 'a', JsonPath: '$.b' }], TemplateText: 'haha\n{{ a }}\nheihei' } });
   }

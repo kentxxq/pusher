@@ -77,7 +77,8 @@ Loader 承担页面查询、筛选及分页；Action 承担校验后的写入和
 | `pages/*.server.ts`、`pages/**/*.server.ts` | HTTP 与业务输入适配、Loader、Action、Cookie 和页面跳转 |
 | `middleware/` | 页面身份恢复、来源检查和 CSRF 验证 |
 | `routes/pusher.webapi/`、`server/push-http.ts` | 旧推送 URL、参数和响应契约适配 |
-| `server/services/` | 认证、权限、资源管理、模板处理、发送、初始化及清理 |
+| `server/services/` | 认证、权限、资源管理、模板处理、投递调度、公共传输、初始化及清理 |
+| `server/channels/` | 渠道适配器、专属参数与协议配置、签名加密及结果判定 |
 | `server/db/` | 双数据库 schema、连接生命周期、统一仓储和迁移 |
 | `shared/` | 领域类型、输入 schema 和可用于客户端的展示辅助逻辑 |
 | `scripts/` | 发布入口、数据库命令和迁移一致性检查 |
@@ -93,7 +94,9 @@ flowchart LR
     Service --> Repo[Repository]
     Repo --> Drizzle[Drizzle 方言适配]
     Drizzle --> DB[(MySQL 或 SQLite)]
-    Service --> Channel[管道发送与邮件服务]
+    Service --> Channel[公共发送与传输]
+    Channel --> AdapterChannels[独立渠道适配器]
+    AdapterChannels --> Transport[HTTP 或 SMTP]
 ```
 
 页面请求先经过身份和 CSRF 边界，再进入 Service，权限规则见[账号与管理](identity-and-management.md)。外部推送走房间代码及密钥验证，不依赖页面登录 Cookie。生产启动、初始化和定时任务的关系见[数据库与部署](database-and-deployment.md)。

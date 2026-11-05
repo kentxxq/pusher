@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { logger } from 'void/log';
 import { Form, useForm, useRouter } from '@void/vue';
 import { useToast } from '@nuxt/ui/composables/useToast';
 import ConfirmModal from '../components/ConfirmModal.vue';
 import Pagination from '../components/Pagination.vue';
 import { channelNames, channelStyles, defaultChannelStyle } from '../shared/domain';
+import { disabledProxy } from '../shared/proxy';
+import { channelKeys, channelFields, messageFields } from '../shared/channels';
 import { listUrl } from '../shared/ui-navigation';
 import { actionErrorMessage } from '../shared/action-error';
 import type { TableColumn } from '@nuxt/ui';
@@ -71,7 +73,27 @@ function refreshChannels() {
 }
 
 // 表单 Actions
-const form = useForm('/channels?save', { id: 0, name: '', type: 0, url: '', proxy: '', config: '', csrf: props.csrf });
+const form = useForm('/channels?save', { id: 0, name: '', type: 0, url: '', ...disabledProxy, config: '', resetConfig: false, csrf: props.csrf });
+const settingsDraft = reactive<Record<string, string>>({});
+const defaultsDraft = reactive<Record<string, string>>({});
+const invalidConfiguration = ref(false);
+const retainedDefaults = ref<Record<string, unknown>>({});
+const currentKey = computed(() => channelKeys[form.data.type]!);
+const settingsFields = computed(() => channelFields[currentKey.value]);
+const defaultFields = computed(() => messageFields[currentKey.value]);
+const defaultOptionValue = '__default__';
+const booleanChoices = [{ label: '默认', value: defaultOptionValue }, { label: '是', value: 'true' }, { label: '否', value: 'false' }];
+function resetConfiguration() {
+  for (const draft of [settingsDraft, defaultsDraft]) for (const key of Object.keys(draft)) delete draft[key];
+  invalidConfiguration.value = false;
+  form.data.resetConfig = false;
+  retainedDefaults.value = {};
+  for (const field of settingsFields.value) {
+    settingsDraft[field.key] = field.key === 'encryptionMode' ? 'None' : '';
+  }
+  for (const field of defaultFields.value) defaultsDraft[field.key] = field.kind === 'boolean' || field.kind === 'choice' ? defaultOptionValue : '';
+}
+watch(() => form.data.type, () => { resetConfiguration(); form.data.url = ''; }, { flush: 'sync' });
 const deletion = useForm('/channels?delete', { id: 0, csrf: props.csrf });
 const testForm = useForm('/channels?test', { id: 0, csrf: props.csrf });
 const roomForm = useForm('/channels?rooms', { id: 0, roomIds: [] as number[], csrf: props.csrf });
@@ -134,14 +156,41 @@ function edit(row?: Props['list']['items'][number]) {
     id: row?.id ?? 0,
     name: row?.name ?? '',
     type: row?.type ?? 0,
-    url: '',
-    proxy: row?.proxy ?? '',
+    url: row?.url ?? '',
+    proxyEnabled: row?.proxyEnabled ?? false,
+    proxyProtocol: row?.proxyProtocol ?? 'http',
+    proxyHost: row?.proxyHost ?? '',
+    proxyPort: row?.proxyPort ?? 8080,
+    proxyUsername: row?.proxyUsername ?? '',
+    proxyPassword: row?.proxyPassword ?? '',
     config: ''
   });
+  resetConfiguration();
+  if (row) {
+    invalidConfiguration.value = row.configuration.invalid;
+    retainedDefaults.value = { ...row.configuration.defaults };
+    for (const field of settingsFields.value) {
+      if (row.configuration.settings[field.key] !== undefined) settingsDraft[field.key] = String(row.configuration.settings[field.key]);
+    }
+    for (const field of defaultFields.value) if (row.configuration.defaults[field.key] !== undefined) defaultsDraft[field.key] = String(row.configuration.defaults[field.key]);
+  }
   editModalOpen.value = true;
 }
 
 async function save() {
+  if (!form.data.proxyEnabled) Object.assign(form.data, disabledProxy);
+  const settings: Record<string, unknown> = {};
+  const defaults = { ...retainedDefaults.value };
+  for (const field of settingsFields.value) {
+    if (settingsDraft[field.key] !== '') settings[field.key] = settingsDraft[field.key];
+  }
+  for (const field of defaultFields.value) {
+    const value = defaultsDraft[field.key];
+    delete defaults[field.key];
+    if ((field.kind === 'boolean' || field.kind === 'choice') && value === defaultOptionValue) continue;
+    if (value !== '' && value !== undefined) defaults[field.key] = field.kind === 'boolean' ? value === 'true' : value;
+  }
+  form.data.config = JSON.stringify({ settings, defaults });
   form.data.csrf = props.csrf;
   await form.post();
   if (form.wasSuccessful) {
@@ -388,6 +437,7 @@ const columns: TableColumn<Row>[] = [
           <!-- 配置状态列 -->
           <template #config-cell="{ row }">
             <div class="flex items-center gap-2 whitespace-nowrap">
+              <UBadge v-if="row.original.configuration.invalid" color="error" variant="subtle" size="xs">配置无效</UBadge>
               <UBadge :color="row.original.hasUrl ? 'success' : 'warning'" variant="subtle" size="xs">
                 {{ row.original.hasUrl ? '地址已设置' : '地址未设置' }}
               </UBadge>
@@ -460,7 +510,13 @@ const columns: TableColumn<Row>[] = [
     </UCard>
 
     <!-- 1. 编辑 / 新建管道弹窗 -->
-    <UModal v-model:open="editModalOpen" :title="form.data.id ? '编辑管道' : '新建管道'" :dismissible="!form.pending" :close="!form.pending">
+    <UModal
+      v-model:open="editModalOpen"
+      :title="form.data.id ? '编辑管道' : '新建管道'"
+      :dismissible="!form.pending"
+      :close="form.pending ? false : { type: 'button', onClick: () => { editModalOpen = false; } }"
+      :ui="{ header: 'shrink-0', wrapper: 'min-w-0 flex-1', close: 'static shrink-0', body: 'min-h-0' }"
+    >
       <template #body>
         <Form :form="{ ...form, post: save }" :render-error="actionErrorMessage" class="grid gap-4">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -472,17 +528,42 @@ const columns: TableColumn<Row>[] = [
             </UFormField>
           </div>
           <UFormField label="管道地址" :error="form.errors.url">
-            <UInput v-model="form.data.url" type="password" autocomplete="new-password" class="w-full" />
+            <UInput v-model="form.data.url" type="text" autocomplete="off" class="w-full" />
           </UFormField>
-          <UFormField label="代理地址（可选）" :error="form.errors.proxy">
-            <UInput v-model="form.data.proxy" class="w-full" />
+          <UFormField label="使用代理">
+            <USwitch v-model="form.data.proxyEnabled" aria-label="使用代理" />
           </UFormField>
-          <UFormField label="管道 JSON 配置（可选，Bark 加密配置在此填写）" :error="form.errors.config">
-            <UTextarea v-model="form.data.config" class="w-full" />
+          <div v-if="form.data.proxyEnabled" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <UFormField label="代理协议" :error="form.errors.proxyProtocol">
+              <USelect v-model="form.data.proxyProtocol" :items="[{ label: 'HTTP', value: 'http' }, { label: 'HTTPS', value: 'https' }]" class="w-full" />
+            </UFormField>
+            <UFormField label="代理服务器" :error="form.errors.proxyHost">
+              <UInput v-model="form.data.proxyHost" autocomplete="off" class="w-full" />
+            </UFormField>
+            <UFormField label="端口" :error="form.errors.proxyPort">
+              <UInput v-model.number="form.data.proxyPort" type="number" :min="1" :max="65535" class="w-full" />
+            </UFormField>
+            <UFormField label="用户名" :error="form.errors.proxyUsername">
+              <UInput v-model="form.data.proxyUsername" autocomplete="off" class="w-full" />
+            </UFormField>
+            <UFormField label="密码" :error="form.errors.proxyPassword">
+              <UInput v-model="form.data.proxyPassword" type="text" autocomplete="off" class="w-full" />
+            </UFormField>
+          </div>
+          <UButton v-if="invalidConfiguration" type="button" color="warning" variant="outline" @click="invalidConfiguration = false; form.data.resetConfig = true">重置无效配置</UButton>
+          <p v-if="form.errors.config" class="text-sm text-error">{{ form.errors.config }}</p>
+          <UFormField v-for="field in settingsFields" :key="field.key" :label="field.label">
+            <USelect v-if="field.kind === 'choice'" v-model="settingsDraft[field.key]" :items="[...(field.values ?? [])]" class="w-full" />
+            <UInput v-else v-model="settingsDraft[field.key]" class="w-full" />
+          </UFormField>
+          <UFormField v-for="field in defaultFields" :key="field.key" :label="`默认${field.label}`">
+            <USelect v-if="field.kind === 'boolean'" v-model="defaultsDraft[field.key]" :items="booleanChoices" class="w-full" />
+            <USelect v-else-if="field.kind === 'choice'" v-model="defaultsDraft[field.key]" :items="[{ label: '默认', value: defaultOptionValue }, ...(field.values ?? []).map(value => ({ label: value, value }))]" class="w-full" />
+            <UInput v-else v-model="defaultsDraft[field.key]" :type="field.kind === 'number' ? 'number' : 'text'" class="w-full" />
           </UFormField>
           <div class="flex justify-end gap-2 pt-2">
             <UButton type="button" color="neutral" variant="ghost" :disabled="form.pending" @click="editModalOpen = false">取消</UButton>
-            <UButton type="submit" :loading="form.pending">保存</UButton>
+            <UButton type="submit" :loading="form.pending" :disabled="invalidConfiguration">保存</UButton>
           </div>
         </Form>
       </template>

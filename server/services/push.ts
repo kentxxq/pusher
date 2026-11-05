@@ -4,6 +4,7 @@ import type { Repository } from '../db/repository';
 import { equalSecret } from './auth';
 import { timestamp } from '../../shared/time';
 import { ChannelSender } from './channels';
+import { channelOptionsSchema, channelKeys } from '../../shared/channels';
 
 import { contentText, renderTemplate } from '../template-renderer';
 
@@ -20,10 +21,11 @@ export class PushService {
     return this.deliver(room.id, input);
   }
   private async deliver(roomId: number, input: PushInput) {
+    const options = channelOptionsSchema.parse(input.channelOptions ?? {});
     let content = contentText(input.content);
     if (input.templateCode) {
       const template = await this.repo.one('templates', { code: input.templateCode });
-      content = template ? renderTemplate(template.value, input.content, input.extra) : '';
+      content = template ? renderTemplate(template.value, input.content, {}) : '';
     }
     const messageId = await this.repo.insert('messages', { type: 0, content, comment: '', recordedAt: timestamp(), roomId });
     const relations = await this.repo.all('relations', { roomId });
@@ -31,7 +33,7 @@ export class PushService {
     for (const relation of relations) jobs.push({ channelId: relation.channelId, id: await this.repo.insert('histories', { channelId: relation.channelId, messageId, status: 0, success: false, result: null }) });
     for (const job of jobs) {
       const channel = await this.repo.one('channels', { id: job.channelId });
-      const result = channel ? await this.sender.send(channel, content, input.extra) : { success: false, result: '管道不存在' };
+      const result = channel ? await this.sender.send(channel, content, options[channelKeys[channel.type]!] ?? {}) : { success: false, result: '管道不存在' };
       await this.repo.update('histories', job.id, { status: 1, ...result });
     }
     // 兼容旧版：接收并完成处理，不代表每条管道均发送成功。

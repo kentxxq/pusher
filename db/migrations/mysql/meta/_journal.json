@@ -8,6 +8,20 @@
       "when": 1792506111665,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1793861330146,
+      "tag": "0001_channel_proxy_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1793861353023,
+      "tag": "0002_split_channel_proxy",
+      "breakpoints": true
     }
   ]
 }

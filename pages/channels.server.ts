@@ -62,6 +62,5 @@ export const actions = {
   save: defineHandler.withValidator({ body: withCsrf(channelSchema) })(async (c, { body }) => { await perform(() => services().management.saveChannel(actor(c), body)); }),
   delete: defineHandler.withValidator({ body: withCsrf(idSchema) })(async (c, { body }) => { await perform(() => services().management.remove(actor(c), 'channels', body.id)); }),
   test: defineHandler.withValidator({ body: withCsrf(idSchema) })(async (c, { body }) => { await perform(() => services().management.testChannel(actor(c), body.id)); }),
-  clearProxy: defineHandler.withValidator({ body: withCsrf(idSchema) })(async (c, { body }) => { await perform(() => services().management.clearChannelSecret(actor(c), body.id, 'proxy')); }),
   rooms: defineHandler.withValidator({ body: withCsrf(channelRoomsSchema) })(async (c, { body }) => { await perform(() => services().management.linkRooms(actor(c), body.id, body.roomIds)); }),
 };

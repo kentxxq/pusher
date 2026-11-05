@@ -24,7 +24,12 @@ export const channels = sqliteTable('Channel', {
   name: text('ChannelName').notNull(),
   type: integer('ChannelType').notNull().default(0),
   url: text('ChannelUrl').notNull(),
-  proxy: text('ChannelProxyUrl'),
+  proxyEnabled: integer('ProxyEnabled', { mode: 'boolean' }).notNull().default(false),
+  proxyProtocol: text('ProxyProtocol', { enum: ['http', 'https'] }).notNull().default('http'),
+  proxyHost: text('ProxyHost').notNull().default(''),
+  proxyPort: integer('ProxyPort').notNull().default(8080),
+  proxyUsername: text('ProxyUsername').notNull().default(''),
+  proxyPassword: text('ProxyPassword').notNull().default(''),
   userId: integer('UserId').notNull(),
   config: text('ChannelConfig'),
 });

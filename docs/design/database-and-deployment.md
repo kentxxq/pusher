@@ -8,7 +8,7 @@
 
 - 每个实例通过配置选择一种数据库：MySQL 使用 mysql2，SQLite 使用 better-sqlite3；不提供运行中切换或数据库间自动复制。
 - MySQL 的数据库、账号及授权由部署环境提供。SQLite 自动创建目录和文件，使用 WAL。
-- Repository 统一业务访问与数据类型；初始化和关联清理由 Service 负责，迁移工具只处理结构及显式迁移 SQL。
+- Repository 统一业务访问与数据类型；初始化和关联清理由 Service 负责，迁移工具处理结构、显式迁移 SQL 及随迁移版本交付的数据转换。
 - 连接适配器承担 Drizzle 查询构造，各方言复用本方言内各表相同的 CRUD 实现；业务仓储不转导出 ORM 工具，保留驱动执行方式及返回值归一化的差异。
 
 ## 规则
@@ -42,18 +42,28 @@ erDiagram
 
 ### 结构迁移和旧库接管
 
-- `vpr db:generate` 分别为两种方言生成 SQL 与快照；开发者审阅后随 schema 一起交付。没有结构变化时不产生空迁移，数据回填使用自定义 SQL 迁移。
+- `vpr db:generate` 分别为两种方言生成 SQL 与快照；开发者审阅后随 schema 一起交付。没有结构变化时不产生空迁移；普通数据回填使用自定义 SQL，URL 解析等跨数据库数据转换通过迁移中的专用标记执行版本化转换代码。
 - `vpr db:check` 在 `debug/` 副本中检查 schema 与已有迁移快照的一致性，不修改正式迁移。
 - `vpr db:migrate` 只应用所选方言尚未执行的迁移，并执行必要初始化。迁移历史保存在 `__drizzle_migrations`，已应用 SQL 的哈希与顺序必须匹配；禁止修改已应用迁移来升级结构。
 - 检测到没有迁移记录的旧业务表时停止，不直接重复建表或推测基线。MySQL 表名比较遵守 `lower_case_table_names`，兼容旧库的小写表名。
-- `vpr db:baseline` 按当前方言 schema 核对表和字段，MySQL 额外校验默认值，只登记第一条迁移，不运行该条建表 SQL，不执行业务初始化。已有迁移记录时拒绝重复建立基线；后续仍需正常 migrate。
+- `vpr db:baseline` 按当前方言初始迁移快照核对表和字段，MySQL 额外校验默认值，只登记第一条迁移，不运行该条建表 SQL，不执行业务初始化。已有迁移记录时拒绝重复建立基线；后续仍需正常 migrate。
 - 最后一个 .NET 版本的 MySQL 旧库通过 `db/legacy/dotnet-to-ts.mysql.sql` 一次性对齐时间精度、模板字段类型和默认值。执行前停服备份并核对旧结构，旧数据必须已使用上海时间；SQL 不修改时间值或业务标识，不处理更早版本或混入 UTC 的数据，不登记迁移历史。完成数据核对后再执行 baseline 和 migrate；新库不执行该 SQL，失败不盲目重跑。具体操作见 [.NET 旧版迁移说明](../dotnet-to-ts-migration.md)。
 - 基线校验不等于完整兼容性证明。接管前在副本核对表名大小写、类型与精度、默认值、索引、字符集、排序规则和数据时间语义；不匹配时先人工完成映射及迁移方案。
 - MySQL 迁移使用数据库命名锁协调迁移连接；DDL 可能部分完成后失败，不假定能够整体事务回滚。SQLite 结构重置使用事务；重置会同时重建迁移记录。
 
+### 渠道代理字段迁移
+
+- `0001_channel_proxy_fields` 增加启用、协议、服务器、端口、用户名、密码六个独立字段；`0002_split_channel_proxy` 执行一次性转换后删除 `ChannelProxyUrl`。两种数据库保持相同的业务结构。
+- 第二步 SQL 中的 `-- pusher:data:split-channel-proxy` 由迁移执行器识别，不作为普通 SQL 下发。转换代码仅用于数据库升级，不供渠道运行时调用。
+- 转换前先解析全部旧记录；空配置关闭代理，有值时解析 HTTP/HTTPS、默认端口、IPv6 和 URL 编码的用户名密码。无法识别的配置以渠道 ID 报错，不输出原 URL 或凭据，不静默丢弃。
+- 新字段更新完成后才删除旧列，迁移完成后登记 SQL 哈希和时间；重复执行跳过已完成版本。SQLite 在事务内执行待应用迁移；MySQL 保留迁移锁，DDL 可能隐式提交，失败时不能假定整个升级已回滚。
+- 初始基线始终核对 `0000_snapshot.json`，包含旧代理列；之后通过正常迁移升级，不用最新 schema 冒充旧库初始结构。
+- 现有库发布前备份并停服升级。结构回退不能仅回退应用代码，旧应用仍依赖已删除的 URL 列。
+
 ### 幂等初始化及显式重置
 
 - 初始化保留现有非删除前缀管理员；没有管理员时，使用配置创建管理员。若同名账号已存在且不是管理员，停止并要求人工核对，不自动提权或覆盖。
+- 渠道配置版本转换属于幂等业务初始化，复用 Repository，不生成空 SQL 迁移；无法转换时保留原值并标记无效。格式和处理规则见[消息投递](message-delivery.md)。
 - 系统模板为 Base、Lark、DingTalk、ComWechat，只补充缺失代码，不覆盖已有模板和用户密码。
 - 管理员重置系统模板是独立操作，会重新生成保留代码对应的模板；数据库重置清空业务表及迁移记录后重新迁移、初始化。重置操作要求管理员权限、CSRF 和显式 `RESET` 输入，不属于正常发布流程。
 
@@ -64,7 +74,7 @@ erDiagram
 | `server/config.ts` | 环境文件、方言选择和必要配置校验 |
 | `server/db/mysql.ts`、`server/db/sqlite.ts` | 各方言 schema 与旧字段映射 |
 | `server/db/connection.ts`、`server/db/repository.ts` | Drizzle 适配、统一仓储和连接关闭 |
-| `server/db/migrations.ts`、`db/migrations/` | 迁移历史、基线、重置及交付 SQL |
+| `server/db/migrations.ts`、`server/db/proxy-migration.ts`、`db/migrations/` | 迁移历史、基线、重置、交付 SQL 及版本化代理数据转换 |
 | `server/services/system.ts` | 管理员与模板初始化、统计及清理策略 |
 | `scripts/`、`Taskfile.yml` | 数据库命令、独立启动入口、定时调度、文件发布及远端服务启停 |
 

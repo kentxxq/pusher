@@ -13,6 +13,7 @@ import { createStatisticsReader } from '../server/db/statistics';
 import * as mysqlTables from '../server/db/mysql';
 import type { Actor } from '../shared/domain';
 import { SignJWT } from 'jose';
+import { disabledProxy } from '../shared/proxy';
 import { timestamp } from '../shared/time';
 
 const mysqlUrl = process.env.TEST_MYSQL_URL;
@@ -41,14 +42,30 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
     it('初始化、重复迁移与基线保留用户和结构', async () => {
       await service.system.initialize(); await migrateDatabase('migrate', config);
       expect(await service.repo.all('users')).toHaveLength(1); expect(await service.repo.all('templates')).toHaveLength(4);
+      const oldProxy = 'http://fake_user:p%40ss%3A%25@localhost:8080';
+      const proxyColumns = ['ProxyEnabled', 'ProxyProtocol', 'ProxyHost', 'ProxyPort', 'ProxyUsername', 'ProxyPassword'];
       if (dialect === 'sqlite') {
-        const raw = new Sqlite(file); raw.exec('DROP TABLE __drizzle_migrations'); raw.close();
+        const raw = new Sqlite(file);
+        try {
+          raw.exec('ALTER TABLE Channel ADD COLUMN ChannelProxyUrl text; DROP TABLE __drizzle_migrations;');
+          for (const column of proxyColumns) raw.exec(`ALTER TABLE Channel DROP COLUMN ${column}`);
+          raw.prepare('INSERT INTO Channel (ChannelName, ChannelType, ChannelUrl, ChannelProxyUrl, UserId) VALUES (?,6,?,?,1)').run('fake_info', 'https://example.invalid/fake_key', oldProxy);
+        } finally { raw.close(); }
       } else {
-        const raw = await createConnection(mysqlUrl!); try { await raw.query('DROP TABLE __drizzle_migrations'); } finally { await raw.end(); }
+        const raw = await createConnection(mysqlUrl!);
+        try {
+          await raw.query('ALTER TABLE Channel ADD COLUMN ChannelProxyUrl varchar(200)');
+          for (const column of proxyColumns) await raw.query(`ALTER TABLE Channel DROP COLUMN ${column}`);
+          await raw.query('DROP TABLE __drizzle_migrations');
+          await raw.query('INSERT INTO Channel (ChannelName, ChannelType, ChannelUrl, ChannelProxyUrl, UserId) VALUES (?,6,?,?,1)', ['fake_info', 'https://example.invalid/fake_key', oldProxy]);
+        } finally { await raw.end(); }
       }
       await expect(migrateDatabase('migrate', config)).rejects.toThrow('db:baseline');
       await migrateDatabase('baseline', config); await migrateDatabase('migrate', config);
       expect((await service.repo.one('users', { id: 1 }))?.password).toBe('fake_password');
+      expect(await service.repo.one('channels', { name: 'fake_info' })).toMatchObject({ proxyEnabled: true, proxyProtocol: 'http', proxyHost: 'localhost', proxyPort: 8080, proxyUsername: 'fake_user', proxyPassword: 'p@ss:%' });
+      await migrateDatabase('migrate', config);
+      expect(await service.repo.all('channels')).toHaveLength(1);
     });
     it('登录、改密、找回邮件限频与 JWT', async () => {
       const token = await service.auth.login(admin.username, 'fake_password');
@@ -108,44 +125,49 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
       expect(mail).toHaveBeenLastCalledWith(username, 'pusher-用户注册', `欢迎注册pusher,你的用户名是${username},你的密码是${user.password}`);
       expect((await service.repo.one('users', { id: user.id }))?.password).toBe(user.password);
     });
-    it('编辑凭据留空保持原值，仅显式清除生效，并拒绝跨账号关联', async () => {
+    it('编辑回显代理和配置密钥、关闭代理清空字段，并拒绝跨账号关联', async () => {
       const otherId = await service.repo.insert('users', { username: 'fake_user', password: 'fake_password', role: 0, lastForgetTime: null, lastLoginTime: null });
       const other: Actor = { id: otherId, username: 'fake_user', role: 0 };
       const room = await service.management.saveRoom(admin, { id: 0, name: '房间', code: 'credential-room', key: 'fake_secret' });
-      const original = { id: 0, name: '管道', type: 6, url: 'https://example.invalid/fake_key', proxy: 'http://fake_user:fake_password@localhost:8080', config: '{"token":"fake_secret"}' };
+      const original = { id: 0, name: '管道', type: 0, url: 'https://example.invalid/fake_key', ...disabledProxy, proxyEnabled: true, proxyHost: 'localhost', proxyPort: 8080, proxyUsername: 'fake_user', proxyPassword: 'fake_password', config: JSON.stringify({ settings: { signingSecret: 'fake_secret' }, defaults: {} }) };
       const channel = await service.management.saveChannel(admin, original);
-      const foreign = await service.management.saveChannel(other, { ...original, proxy: '', config: '' });
+      const foreign = await service.management.saveChannel(other, { ...original, ...disabledProxy, config: '' });
       await service.management.linkChannels(admin, room, [channel, channel]);
       await expect(service.management.linkChannels(admin, room, [channel, foreign])).rejects.toThrow('记录不存在');
       expect(await service.repo.all('relations', { roomId: room })).toMatchObject([{ channelId: channel }]);
+      expect((await service.management.channels(admin, 1)).items[0]).toMatchObject({ url: original.url, proxyHost: original.proxyHost, proxyUsername: original.proxyUsername, proxyPassword: original.proxyPassword, configuration: { settings: { signingSecret: 'fake_secret' } } });
+      expect((await service.management.channels(other, 1)).items.map(item => item.id)).toEqual([foreign]);
+      await expect(service.management.channelDetail(other, channel, 1)).rejects.toThrow('记录不存在');
       await service.management.saveRoom(admin, { id: room, name: '新名称', code: '', key: '' });
-      await service.management.saveChannel(admin, { ...original, id: channel, name: '新名称', url: '', proxy: '', config: '' });
+      await service.management.saveChannel(admin, { ...original, id: channel, name: '新名称', url: '', config: '' });
       expect(await service.repo.one('rooms', { id: room })).toMatchObject({ code: 'credential-room', key: 'fake_secret' });
-      expect(await service.repo.one('channels', { id: channel })).toMatchObject({ url: original.url, proxy: original.proxy, config: original.config });
+      expect(await service.repo.one('channels', { id: channel })).toMatchObject({ url: original.url, proxyEnabled: true, proxyHost: original.proxyHost, proxyUsername: original.proxyUsername, proxyPassword: original.proxyPassword });
       await expect(service.management.clearRoomKey(other, room)).rejects.toThrow('记录不存在');
       await service.management.clearRoomKey(admin, room);
-      await service.management.clearChannelSecret(admin, channel, 'proxy');
-      await service.management.clearChannelSecret(admin, channel, 'config');
+      await service.management.saveChannel(admin, { ...original, id: channel, proxyEnabled: false, config: JSON.stringify({ settings: {}, defaults: {} }) });
       expect(await service.repo.one('rooms', { id: room })).toMatchObject({ key: '' });
-      expect(await service.repo.one('channels', { id: channel })).toMatchObject({ url: original.url, proxy: '', config: '' });
+      expect(await service.repo.one('channels', { id: channel })).toMatchObject({ url: original.url, ...disabledProxy });
+      expect(JSON.parse((await service.repo.one('channels', { id: channel }))!.config!)).toEqual({ version: 1, settings: {}, defaults: {} });
     });
     it('增量 SQL 只执行一次，保留已有数据并拒绝修改已应用的 SQL', async () => {
       const directory = resolve(`debug/tmpfile-AI-migrations-${randomUUID()}`);
       cpSync(resolve('db/migrations', dialect), directory, { recursive: true });
       const journalPath = resolve(directory, 'meta/_journal.json');
       const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as { entries: { idx: number; version: string; when: number; tag: string; breakpoints: boolean }[] };
-      journal.entries.push({ ...journal.entries[0]!, idx: 1, when: journal.entries[0]!.when + 1, tag: '0001_test_addition' });
+      const last = journal.entries.at(-1)!;
+      const tag = `${String(last.idx + 1).padStart(4, '0')}_test_addition`;
+      journal.entries.push({ ...last, idx: last.idx + 1, when: last.when + 1, tag });
       writeFileSync(journalPath, JSON.stringify(journal));
-      const migration = resolve(directory, '0001_test_addition.sql');
+      const migration = resolve(directory, `${tag}.sql`);
       writeFileSync(migration, 'ALTER TABLE `Room` ADD COLUMN `ExtraTestValue` text;');
       await migrateDatabase('migrate', config, directory); await migrateDatabase('migrate', config, directory);
       expect((await service.repo.one('users', { id: 1 }))?.username).toBe('fake_email');
       writeFileSync(migration, 'ALTER TABLE `Room` ADD COLUMN `OtherTestValue` text;');
       await expect(migrateDatabase('migrate', config, directory)).rejects.toThrow('迁移历史');
     });
-    it('页面与推送共享业务，权限与密钥校验，凭据不进入页面数据', async () => {
+    it('页面与推送共享业务，校验权限并只向所属用户返回渠道地址', async () => {
       const roomId = await service.management.saveRoom(admin, { id: 0, name: '房间', code: 'room', key: 'fake_secret' });
-      const channelId = await service.management.saveChannel(admin, { id: 0, name: '管道', type: 6, url: 'https://example.invalid/fake_key', proxy: '', config: '' });
+      const channelId = await service.management.saveChannel(admin, { id: 0, name: '管道', type: 6, url: 'https://example.invalid/fake_key', ...disabledProxy, config: '' });
       await service.management.linkChannels(admin, roomId, [channelId]);
       await expect(service.management.linkChannels(stranger, roomId, [])).rejects.toThrow('记录不存在');
       await expect(service.users.list(stranger, 1)).rejects.toThrow('管理员');
@@ -157,22 +179,24 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
       expect((await service.repo.all('histories')).every(h => h.success && h.status === 1)).toBe(true);
       expect(transport).toHaveBeenCalledTimes(2);
       const safe = JSON.stringify({ rooms: await service.management.rooms(admin, 1), channels: await service.management.channels(admin, 1), users: await service.users.list(admin, 1) });
-      expect(safe).not.toContain('fake_secret'); expect(safe).not.toContain('fake_key'); expect(safe).not.toContain('fake_password');
+      expect(safe).not.toContain('fake_secret'); expect(safe).not.toContain('fake_password');
+      expect((await service.management.channels(admin, 1)).items[0]?.url).toBe('https://example.invalid/fake_key');
+      expect((await service.management.channels(stranger, 1)).items).toEqual([]);
       await service.management.remove(admin, 'rooms', roomId);
       expect(await service.repo.all('histories')).toHaveLength(0);
     });
     it('接收成功与管道发送失败分开记录', async () => {
       const bad = createServices(service.repo, new ChannelSender(async () => ({ ok: false, text: 'fake_secret' })), mail);
       const roomId = await bad.management.saveRoom(admin, { id: 0, name: '失败房间', code: 'fail', key: '' });
-      const channelId = await bad.management.saveChannel(admin, { id: 0, name: '失败管道', type: 6, url: 'https://example.invalid/send', proxy: '', config: '' });
+      const channelId = await bad.management.saveChannel(admin, { id: 0, name: '失败管道', type: 6, url: 'https://example.invalid/send', ...disabledProxy, config: '' });
       await bad.management.linkChannels(admin, roomId, [channelId]);
       expect(await bad.push.external('fail', '', { content: '内容', messageType: 0, templateCode: '', extra: {} })).toBe(true);
       expect((await bad.repo.all('histories'))[0]).toMatchObject({ status: 1, success: false });
     });
     it('单个管道失败不阻断其他管道，历史对应同一条渲染后消息', async () => {
       const room = await service.management.saveRoom(admin, { id: 0, name: '房间', code: 'partial-failure', key: '' });
-      const first = await service.management.saveChannel(admin, { id: 0, name: '成功管道', type: 6, url: 'https://example.invalid/success', proxy: '', config: '' });
-      const second = await service.management.saveChannel(admin, { id: 0, name: '失败管道', type: 6, url: 'https://example.invalid/failure', proxy: '', config: '' });
+      const first = await service.management.saveChannel(admin, { id: 0, name: '成功管道', type: 6, url: 'https://example.invalid/success', ...disabledProxy, config: '' });
+      const second = await service.management.saveChannel(admin, { id: 0, name: '失败管道', type: 6, url: 'https://example.invalid/failure', ...disabledProxy, config: '' });
       await service.management.linkChannels(admin, room, [first, second]);
       transport.mockImplementation(async request => ({ ok: !request.url.endsWith('/failure'), text: '{}' }));
       try {
@@ -199,7 +223,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
     });
     it('房间和管道历史按数据库分页，只读取当前页对应的正文', async () => {
       const roomId = await service.management.saveRoom(admin, { id: 0, name: '分页房间', code: 'page', key: '' });
-      const channelId = await service.management.saveChannel(admin, { id: 0, name: '分页管道', type: 6, url: 'https://example.invalid/send', proxy: '', config: '' });
+      const channelId = await service.management.saveChannel(admin, { id: 0, name: '分页管道', type: 6, url: 'https://example.invalid/send', ...disabledProxy, config: '' });
       await service.management.linkChannels(admin, roomId, [channelId]);
       for (let i = 1; i <= 25; i++) {
         const messageId = await service.repo.insert('messages', { type: 0, content: `消息 ${i}`, comment: '', recordedAt: '2026-10-21 00:00:00.000', roomId });
@@ -224,7 +248,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
     });
     it('统计接受原型属性同名资源，且不混入其他用户的消息', async () => {
       const roomId = await service.management.saveRoom(admin, { id: 0, name: '__proto__', code: 'stats', key: '' });
-      const channelId = await service.management.saveChannel(admin, { id: 0, name: 'constructor', type: 6, url: 'https://example.invalid/send', proxy: '', config: '' });
+      const channelId = await service.management.saveChannel(admin, { id: 0, name: 'constructor', type: 6, url: 'https://example.invalid/send', ...disabledProxy, config: '' });
       await service.management.linkChannels(admin, roomId, [channelId]);
       await service.push.owned(admin, roomId, { content: '正文', templateCode: '', messageType: 0, extra: {} });
       const stats = await service.system.stats(admin);
@@ -238,8 +262,8 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
       const first = await service.management.saveRoom(admin, { id: 0, name: 'Case', code: 'stats-first', key: '' });
       const second = await service.management.saveRoom(admin, { id: 0, name: 'case', code: 'stats-second', key: '' });
       const foreign = await service.management.saveRoom(other, { id: 0, name: 'Case', code: 'stats-foreign', key: '' });
-      const channel = await service.management.saveChannel(admin, { id: 0, name: 'fake_info', type: 6, url: 'https://example.invalid/send', proxy: '', config: '' });
-      await service.management.saveChannel(other, { id: 0, name: 'fake_info', type: 4, url: 'https://example.invalid/send', proxy: '', config: '' });
+      const channel = await service.management.saveChannel(admin, { id: 0, name: 'fake_info', type: 6, url: 'https://example.invalid/send', ...disabledProxy, config: '' });
+      await service.management.saveChannel(other, { id: 0, name: 'fake_info', type: 4, url: 'https://example.invalid/send', ...disabledProxy, config: '' });
       const add = (roomId: number, recordedAt: string) => service.repo.insert('messages', { roomId, recordedAt, type: 0, content: '不应被统计读取的正文', comment: '' });
       const recent = await add(first, '2026-10-21 10:00:00.000');
       const boundary = await add(second, '2026-10-20 12:00:00.000');
@@ -279,12 +303,13 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
       } finally { reads.mockRestore(); clock.mockRestore(); }
     });
     it('Bark 保存时校验加密配置，留空编辑保留有效配置', async () => {
-      const input = { id: 0, name: 'Bark', type: 4, url: 'https://example.invalid/send', proxy: '', config: '{"encryptionMode":"AES128CBC"}' };
-      await expect(service.management.saveChannel(admin, input)).rejects.toThrow('Bark 加密配置无效');
-      const config = JSON.stringify({ encryptionMode: 'AES128CBC', encryptionKey: 'x'.repeat(16), encryptionIv: 'y'.repeat(16) });
+      const input = { id: 0, name: 'Bark', type: 4, url: 'https://example.invalid/send', ...disabledProxy, config: JSON.stringify({ settings: { encryptionMode: 'AES128CBC' }, defaults: {} }) };
+      await expect(service.management.saveChannel(admin, input)).rejects.toThrow('管道配置无效');
+      const settings = { encryptionMode: 'AES128CBC', encryptionKey: 'x'.repeat(16), encryptionIv: 'y'.repeat(16) };
+      const config = JSON.stringify({ settings, defaults: {} });
       const id = await service.management.saveChannel(admin, { ...input, config });
       await service.management.saveChannel(admin, { ...input, id, config: '' });
-      expect((await service.repo.one('channels', { id }))?.config).toBe(config);
+      expect(JSON.parse((await service.repo.one('channels', { id }))!.config!)).toEqual({ version: 1, settings, defaults: {} });
     });
     it('用户两次删除及定时清理边界', async () => {
       await service.users.create(admin, { username: 'fake_user', password: 'fake_password', role: 0 });

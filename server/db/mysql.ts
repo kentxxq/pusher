@@ -30,7 +30,12 @@ export const channels = mysqlTable('Channel', {
   name: varchar('ChannelName', { length: 200 }).notNull(),
   type: int('ChannelType').notNull().default(0),
   url: varchar('ChannelUrl', { length: 200 }).notNull(),
-  proxy: varchar('ChannelProxyUrl', { length: 200 }),
+  proxyEnabled: boolean('ProxyEnabled').notNull().default(false),
+  proxyProtocol: varchar('ProxyProtocol', { length: 5 }).$type<'http' | 'https'>().notNull().default('http'),
+  proxyHost: varchar('ProxyHost', { length: 200 }).notNull().default(''),
+  proxyPort: int('ProxyPort').notNull().default(8080),
+  proxyUsername: varchar('ProxyUsername', { length: 200 }).notNull().default(''),
+  proxyPassword: varchar('ProxyPassword', { length: 200 }).notNull().default(''),
   userId: int('UserId').notNull(),
   config: text('ChannelConfig'),
 });

@@ -1,13 +1,10 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import Sqlite from 'better-sqlite3';
 import { createConnection, type RowDataPacket } from 'mysql2/promise';
-import { drizzle as mysqlDrizzle } from 'drizzle-orm/mysql2';
-import { drizzle as sqliteDrizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate as mysqlMigrate } from 'drizzle-orm/mysql2/migrator';
-import { migrate as sqliteMigrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
-import { getTableColumns, getTableName } from 'drizzle-orm';
+import { getTableName } from 'drizzle-orm';
+import { convertLegacyProxies, proxyMigrationMarker, proxyMigrationUpdate, proxyMigrationValues } from './proxy-migration';
 import { databaseConfig } from '../config';
 import { SetupError } from '../errors';
 import * as mysql from './mysql';
@@ -19,6 +16,11 @@ function verifyHistory(history: History[], migrations: ReturnType<typeof readMig
     const row = history[i], expected = migrations[i];
     if (!expected || row.hash !== expected.hash || Number(row.created_at) !== expected.folderMillis) throw new SetupError('迁移历史与 SQL 不一致，禁止继续执行');
   }
+}
+interface SnapshotColumn { name: string; type: string; primaryKey: boolean; notNull: boolean; autoincrement?: boolean; default?: unknown }
+function baselineTables(directory: string) {
+  const snapshot = JSON.parse(readFileSync(resolve(directory, 'meta/0000_snapshot.json'), 'utf8')) as { tables: Record<string, { name: string; columns: Record<string, SnapshotColumn>; compositePrimaryKeys?: Record<string, { columns: string[] }> }> };
+  return Object.values(snapshot.tables).map(table => ({ name: table.name, columns: Object.values(table.columns).map(column => ({ ...column, primaryKey: column.primaryKey || Object.values(table.compositePrimaryKeys ?? {}).some(key => key.columns.includes(column.name)) })) }));
 }
 export async function migrateDatabase(mode: 'migrate' | 'baseline' | 'reset' = 'migrate', config = databaseConfig(), migrationsFolder = resolve('db/migrations', config.dialect)) {
   const migrations = readMigrationFiles({ migrationsFolder });
@@ -35,10 +37,10 @@ export async function migrateDatabase(mode: 'migrate' | 'baseline' | 'reset' = '
         file.transaction(() => { for (const name of [...names, '__drizzle_migrations']) file.exec(`DROP TABLE IF EXISTS "${name}"`); })();
       } else if (mode === 'baseline') {
         if (history.length) throw new SetupError('该数据库已有迁移记录');
-        for (const table of Object.values(sqlite)) {
-          const actual = file.prepare(`PRAGMA table_info("${getTableName(table)}")`).all() as { name: string; type: string; pk: number; notnull: number }[];
-          const expected = Object.values(getTableColumns(table));
-          if (actual.length !== expected.length || expected.some(c => { const a = actual.find(a => a.name === c.name); return !a || a.type.toLowerCase() !== c.getSQLType().toLowerCase() || Boolean(a.pk) !== c.primary || (c.notNull && !a.notnull && !a.pk); })) throw new SetupError(`表 ${getTableName(table)} 与初始结构不匹配，请先核对旧库结构`);
+        for (const table of baselineTables(migrationsFolder)) {
+          const actual = file.prepare(`PRAGMA table_info("${table.name}")`).all() as { name: string; type: string; pk: number; notnull: number }[];
+          const expected = table.columns;
+          if (actual.length !== expected.length || expected.some(c => { const a = actual.find(a => a.name === c.name); return !a || a.type.toLowerCase() !== c.type.toLowerCase() || Boolean(a.pk) !== c.primaryKey || (c.notNull && !a.notnull && !a.pk); })) throw new SetupError(`表 ${table.name} 与初始结构不匹配，请先核对旧库结构`);
         }
         file.transaction(() => {
           file.exec('CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC)');
@@ -49,7 +51,21 @@ export async function migrateDatabase(mode: 'migrate' | 'baseline' | 'reset' = '
         if (!history.length && tables.some(t => names.includes(t.name))) throw new SetupError('检测到旧业务表，请先备份并执行 db:baseline');
         verifyHistory(history, migrations);
       }
-      sqliteMigrate(sqliteDrizzle(file), { migrationsFolder });
+      file.transaction(() => {
+        file.exec('CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC)');
+        for (const migration of migrations.slice(mode === 'reset' ? 0 : history.length)) {
+          for (const statement of migration.sql) {
+            if (!statement.trim()) continue;
+            if (statement.trim() === proxyMigrationMarker) {
+              const rows = file.prepare('SELECT Id AS id, ChannelProxyUrl AS proxy FROM Channel').all() as Array<{ id: number; proxy: string | null }>;
+              const converted = convertLegacyProxies(rows);
+              const update = file.prepare(proxyMigrationUpdate);
+              for (const row of converted) update.run(...proxyMigrationValues(row.settings), row.id);
+            } else file.exec(statement);
+          }
+          file.prepare('INSERT INTO __drizzle_migrations(hash, created_at) VALUES (?, ?)').run(migration.hash, migration.folderMillis);
+        }
+      })();
     } finally { file.close(); }
     return;
   }
@@ -68,17 +84,17 @@ export async function migrateDatabase(mode: 'migrate' | 'baseline' | 'reset' = '
       for (const name of [...Object.values(mysql).map(getTableName), '__drizzle_migrations']) await connection.query(`DROP TABLE IF EXISTS \`${name}\``);
     } else if (mode === 'baseline') {
       if (history.length) throw new SetupError('该数据库已有迁移记录');
-      for (const table of Object.values(mysql)) {
-        const actualTableName = tables.find(t => tableKey(t.name) === tableKey(getTableName(table)))?.name ?? getTableName(table);
+      for (const table of baselineTables(migrationsFolder)) {
+        const actualTableName = tables.find(t => tableKey(t.name) === tableKey(table.name))?.name ?? table.name;
         const [actual] = await connection.query<RowDataPacket[]>('SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type, COLUMN_KEY AS pk, IS_NULLABLE AS nullable, EXTRA AS extra, COLUMN_DEFAULT AS defaultValue FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND BINARY TABLE_NAME = BINARY ?', [actualTableName]);
-        const expected = Object.values(getTableColumns(table));
+        const expected = table.columns;
         const normalize = (value: string) => value.toLowerCase().replace(/int\(\d+\)/g, 'int').replace('boolean', 'tinyint');
         if (actual.length !== expected.length || expected.some(c => {
           const a = actual.find(a => a.name === c.name);
           const expectedDefault = c.default == null ? null : String(typeof c.default === 'boolean' ? Number(c.default) : c.default);
           const actualDefault = a?.defaultValue == null ? null : String(a.defaultValue);
-          return !a || normalize(a.type) !== normalize(c.getSQLType()) || (c.primary !== (a.pk === 'PRI')) || (c.notNull !== (a.nullable === 'NO')) || (c.primary && !String(a.extra).includes('auto_increment')) || actualDefault !== expectedDefault;
-        })) throw new SetupError(`表 ${getTableName(table)} 与初始结构不匹配，请先核对旧库字段类型、精度与默认值`);
+          return !a || normalize(a.type) !== normalize(c.type) || (c.primaryKey !== (a.pk === 'PRI')) || (c.notNull !== (a.nullable === 'NO')) || (c.primaryKey && !String(a.extra).includes('auto_increment')) || actualDefault !== expectedDefault;
+        })) throw new SetupError(`表 ${table.name} 与初始结构不匹配，请先核对旧库字段类型、精度与默认值`);
       }
       await connection.query('CREATE TABLE IF NOT EXISTS __drizzle_migrations (id SERIAL PRIMARY KEY, hash TEXT NOT NULL, created_at BIGINT)');
       await connection.query('INSERT INTO __drizzle_migrations(hash, created_at) VALUES (?, ?)', [migrations[0]!.hash, migrations[0]!.folderMillis]);
@@ -87,7 +103,22 @@ export async function migrateDatabase(mode: 'migrate' | 'baseline' | 'reset' = '
       if (!history.length && tables.some(t => names.includes(tableKey(t.name)))) throw new SetupError('检测到旧业务表，请先备份并执行 db:baseline');
       verifyHistory(history, migrations);
     }
-    await mysqlMigrate(mysqlDrizzle(connection), { migrationsFolder });
+    await connection.query('CREATE TABLE IF NOT EXISTS __drizzle_migrations (id SERIAL PRIMARY KEY, hash TEXT NOT NULL, created_at BIGINT)');
+    for (const migration of migrations.slice(mode === 'reset' ? 0 : history.length)) {
+      await connection.beginTransaction();
+      try {
+        for (const statement of migration.sql) {
+          if (!statement.trim()) continue;
+          if (statement.trim() === proxyMigrationMarker) {
+            const [rows] = await connection.query<RowDataPacket[]>('SELECT Id AS id, ChannelProxyUrl AS proxy FROM Channel');
+            const converted = convertLegacyProxies(rows as Array<{ id: number; proxy: string | null }>);
+            for (const row of converted) await connection.query(proxyMigrationUpdate, [...proxyMigrationValues(row.settings), row.id]);
+          } else await connection.query(statement);
+        }
+        await connection.query('INSERT INTO __drizzle_migrations(hash, created_at) VALUES (?, ?)', [migration.hash, migration.folderMillis]);
+        await connection.commit();
+      } catch (error) { await connection.rollback(); throw error; }
+    }
   } finally {
     await connection.query('SELECT RELEASE_LOCK(?)', [lockName]).catch(() => {});
     await connection.end();

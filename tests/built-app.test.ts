@@ -9,6 +9,7 @@ import { openDatabase } from '../server/db/connection';
 import { createServices } from '../server/services';
 import { publicRequest } from '../server/request-origin';
 import { MockAgent, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
+import { disabledProxy } from '../shared/proxy';
 
 describe.skipIf(!existsSync('dist/ssr/app.js'))('构建产物请求验证（不监听端口）', () => {
   let app: Hono;
@@ -122,7 +123,7 @@ describe.skipIf(!existsSync('dist/ssr/app.js'))('构建产物请求验证（不�
     try {
       const action = (path: string, body: object) => app.request(path, { method: 'POST', headers: { origin: 'http://localhost', cookie, 'content-type': 'application/json' }, body: JSON.stringify({ ...body, csrf }) });
       expect((await action('/rooms?save', { id: 0, name: '闭环房间', code: 'flow-room', key: 'fake_secret' })).status).toBe(200);
-      expect((await action('/channels?save', { id: 0, name: '闭环管道', type: 6, url: 'https://example.invalid/fake_key', proxy: '', config: '' })).status).toBe(200);
+      expect((await action('/channels?save', { id: 0, name: '闭环管道', type: 6, url: 'https://example.invalid/fake_key', ...disabledProxy, config: '' })).status).toBe(200);
       expect((await action('/templates?save', { id: 0, name: '闭环模板', code: 'flow-template', value: JSON.stringify({ Variables: [{ VariableName: 'a', JsonPath: '$.text' }, { VariableName: 'title', JsonPath: '$.title' }], TemplateText: '{{a}}|{{title}}' }) })).status).toBe(200);
       const room = (await repo.one('rooms', { code: 'flow-room' }))!;
       const channel = (await repo.one('channels', { name: '闭环管道' }))!;
@@ -167,23 +168,27 @@ describe.skipIf(!existsSync('dist/ssr/app.js'))('构建产物请求验证（不�
   it('资源写操作、详情历史、结构化错误及删除在生产产物中正常工作', async () => {
     const action = (path: string, body: object) => app.request(path, { method: 'POST', headers: { origin: 'http://localhost', cookie, 'content-type': 'application/json' }, body: JSON.stringify({ ...body, csrf }) });
     expect((await action('/rooms?save', { id: 0, name: '验收房间', code: 'acceptance', key: 'fake_secret' })).status).toBe(200);
-    expect((await action('/channels?save', { id: 0, name: '验收管道', type: 6, url: 'https://example.invalid/fake_key', proxy: '', config: '' })).status).toBe(200);
+    expect((await action('/channels?save', { id: 0, name: '验收管道', type: 6, url: 'https://example.invalid/fake_key', ...disabledProxy, config: '' })).status).toBe(200);
     expect((await action('/templates?save', { id: 0, name: '验收模板', code: 'constructor', value: JSON.stringify({ Variables: [], TemplateText: '验收正文' }) })).status).toBe(200);
     const repo = openDatabase();
     try {
       const room = (await repo.one('rooms', { code: 'acceptance' }))!;
       const channel = (await repo.one('channels', { name: '验收管道' }))!;
-      const invalid = await action('/channels?save', { id: 0, name: '无效 Bark', type: 4, url: 'https://example.invalid/send', proxy: '', config: '{"encryptionMode":"AES128CBC"}' });
+      const invalid = await action('/channels?save', { id: 0, name: '无效 Bark', type: 4, url: 'https://example.invalid/send', ...disabledProxy, config: JSON.stringify({ settings: { encryptionMode: 'AES128CBC' }, defaults: {} }) });
       expect(invalid.status).toBe(400);
-      expect(await invalid.json()).toEqual({ message: 'Bark 加密配置无效，请检查模式、密钥与 IV 长度' });
+      expect(await invalid.json()).toEqual({ message: '管道配置无效，请检查字段、密钥和参数类型' });
       expect((await action(`/rooms/${room.id}?send`, { id: room.id, content: '输入正文', templateCode: 'constructor' })).status).toBe(200);
       for (const path of [`/rooms/${room.id}`, `/channels/${channel.id}`]) {
         const response = await app.request(path, { headers: { cookie } });
         const html = await response.text();
         expect(response.status, path).toBe(200);
         expect(html).not.toContain('fake_secret');
-        expect(html).not.toContain('fake_key');
-        if (path.startsWith('/rooms/')) expect(html).toContain('验收正文');
+        if (path.startsWith('/rooms/')) {
+          expect(html).not.toContain('fake_key');
+          expect(html).toContain('验收正文');
+        } else {
+          expect(html).toContain(channel.url);
+        }
       }
       expect((await action('/admin/db?templates', { confirmation: 'RESET' })).status).toBe(200);
       const template = (await repo.one('templates', { code: 'constructor' }))!;

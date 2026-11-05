@@ -65,7 +65,7 @@ MySQL 的数据库和账号需事先创建并授权。SQLite 自动创建目录�
 
 页面使用 Loader/Action 调用共享 Service；Service 通过 Repository 使用 Drizzle。Vue 组件仅接收页面 Props，不直接访问数据库。
 
-页面包含概览、账号、房间、管道、模板、消息历史、用户管理和系统维护。修改已有管道时，地址和配置留空会保留原值，完整内容不回显；代理地址正常回显，删空后保存即可移除代理。房间详情页面可显式清除房间密钥。
+页面包含概览、账号、房间、管道、模板、消息历史、用户管理和系统维护。修改已有管道时，地址、代理和配置密钥均以普通文本回显并允许直接编辑；代理通过开关启用，开启后分别设置协议、服务器、端口、用户名和密码，关闭后保存即移除；可选密钥留空即移除。房间详情页面可显式清除房间密钥。
 
 仅保留两个旧推送接口，管理功能通过页面操作：
 
@@ -74,7 +74,29 @@ GET  /pusher.webapi/Room/SendMessageByGet/:roomCode?content=消息内容&roomKey
 POST /pusher.webapi/Room/SendMessageByPost/:roomCode?roomKey=房间密钥&templateCode=模板代码&messageType=Text
 ```
 
-POST 接受原 JSON 请求体。透传参数、Body 覆盖 Query 的规则沿用旧版。支持钉钉、企业微信、飞书、Telegram、Bark、邮箱、Webhook 和 Qmsg。
+支持钉钉、企业微信、飞书、Telegram、Bark、邮箱、Webhook 和 Qmsg。推送地址及响应保持不变，旧平铺透传参数停止生效。
+
+GET 使用点号参数（实际请求需对参数值进行 URL 编码）：
+
+```text
+?content=服务器异常&channelOptions.bark.sound=alarm&channelOptions.bark.badge=3&channelOptions.telegram.disable_notification=true
+```
+
+POST 使用 JSON 对象：
+
+```json
+{
+  "content": "服务器异常",
+  "channelOptions": {
+    "bark": { "sound": "alarm", "badge": 3 },
+    "telegram": { "disable_notification": true }
+  }
+}
+```
+
+GET 不接受重复专属参数或嵌套字段；数组及对象通过 POST 提交。POST 的专属参数只从 Body 读取，携带时必须提供非 null 的 `content`；不携带时保留原 JSON 正文解析。参数区分大小写，未知字段使对应渠道失败，其他渠道继续发送。
+
+渠道编辑页提供默认参数、Bark 加密及钉钉/飞书签名配置；本次参数覆盖各渠道默认值，不能覆盖目标和密钥。初始化自动转换可识别的旧配置，无法转换的保留原值并在渠道页面标记，需重新配置。所属用户可以直接查看和编辑完整管道地址、代理独立字段及配置密钥。旧代理 URL 随数据库升级一次性拆分，迁移成功后删除旧列，运行时不保留旧格式兼容；无法解析的配置会阻止迁移，并以渠道 ID 提示修正。具体支持字段见[消息投递设计](docs/design/message-delivery.md)。
 
 ## SQL 迁移
 

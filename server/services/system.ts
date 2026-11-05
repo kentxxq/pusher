@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from 'void/log';
 import { BusinessError, type Actor, type TemplateObject } from '../../shared/domain';
 import type { Repository } from '../db/repository';
 import { requireAdmin } from './auth';
@@ -10,6 +11,8 @@ const systemTemplates: Record<string, [string, string]> = { Base: ['基础模板
 export class SystemService {
   constructor(private readonly repo: Repository, private readonly management: ManagementService, private readonly users: UserService) {}
   async initialize() {
+    const invalidConfigs = await this.management.migrateChannelConfigs();
+    if (invalidConfigs) logger.warn('存在无法迁移的渠道配置，请在渠道页面重新配置', { count: invalidConfigs });
     let admin = (await this.repo.all('users')).find(u => u.role === 100 && !u.username.startsWith('delete_'));
     if (!admin) {
       const username = process.env.ADMIN_USERNAME, password = process.env.ADMIN_PASSWORD;
